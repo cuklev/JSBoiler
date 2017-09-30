@@ -38,10 +38,7 @@ data Expression = Plus Expression Expression -- +
                 | LiteralString String
 
 binaryOperand :: (JSType -> JSType -> JSType) -> Expression -> Expression -> Stack -> IO JSType
-binaryOperand f x y stack = do
-    vx <- evalExpression x stack
-    vy <- evalExpression y stack
-    return $ f vx vy
+binaryOperand f x y stack = liftM2 f (evalExpression x stack) (evalExpression y stack)
 
 evalExpression :: Expression -> Stack -> IO JSType
 evalExpression (Plus x y) stack = binaryOperand (+.) x y stack
