@@ -1,8 +1,12 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module JSEngine.Statement where
 
+import Control.Monad (liftM2)
 import JSEngine.Type
+import JSEngine.Operators
 
 data Statement = DeclarationStatement [(String, Maybe Expression)]
+               | BlockScope [Statement]
                | IfStatement { condition :: Expression
                              , thenWhat :: [Statement]
                              , elseWhat :: [Statement]
@@ -11,9 +15,12 @@ data Statement = DeclarationStatement [(String, Maybe Expression)]
                                 , body :: [Statement]
                                 }
                -- | for later
-               | BlockScope [Statement]
                -- | switch later
                -- | trycatch later
+
+data LeftValue = Binding String
+               | MemberAccess Expression String
+               | Indexing Expression Expression
 
 data Expression = Plus Expression Expression -- +
                 | PrefixPlus Expression -- +
@@ -22,11 +29,16 @@ data Expression = Plus Expression Expression -- +
                 | Star Expression Expression -- *
                 | Slash Expression Expression -- /
                 -- more operators
-                | Assignment Expression Expression -- left-hand? = expression
+                | Assignment LeftValue Expression -- =
                 | Ternary Expression Expression Expression -- ?:
-                | MemberAcces Expression String -- .
-                | Indexing Expression Expression -- []
+                | LeftValue LeftValue
                 | FunctionCall Expression [Expression] -- ()
                 | New Expression [Expression] -- new :(
-                | Literal JSType
-                | Binding JSType
+                | LiteralNumber Double
+                | LiteralString String
+
+evalExpression :: Expression -> Stack -> IO JSType
+evalExpression (Plus x y) stack = do
+    vx <- evalExpression x stack
+    vy <- evalExpression y stack
+    vx +. vy

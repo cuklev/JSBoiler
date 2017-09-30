@@ -28,3 +28,14 @@ data JSBinding = JSBinding { isConst :: Bool
                            }
 
 type Stack = [M.Map String JSBinding]
+
+lookupBinding :: String -> Stack -> Maybe JSBinding
+lookupBinding _ [] = Nothing
+lookupBinding name (x:xs) = maybe (lookupBinding name xs) Just $ M.lookup name x
+
+instance Show JSType where
+    show (JSNumber x) = show x
+    show (JSString x) = x
+    show (JSBoolean x) = if x then "true" else "false"
+    show JSNull = "null"
+    show JSUndefined = "null"
