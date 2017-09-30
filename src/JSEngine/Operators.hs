@@ -11,10 +11,26 @@ getNumericValue (JSNumber x) = Just x
 getNumericValue (JSBoolean x) = Just $ if x then 1 else 0
 getNumericValue JSNull = Just 0
 getNumericValue JSUndefined = Just nAn
-getNumericValue _ = Nothing
+getNumericValue value = numberParse $ show value
 
-(+.) :: JSType -> JSType -> IO JSType
-x +. y = let msum = liftM2 (+) (getNumericValue x) (getNumericValue y)
-         in return $ case msum of
-            Just sum -> JSNumber sum
-            Nothing -> JSString $ show x ++ show y
+numberParse :: String -> Maybe Double
+numberParse = const Nothing
+
+numericOperator :: (Double -> Double -> Double) -> JSType -> JSType -> Maybe Double
+numericOperator f x y = liftM2 f (getNumericValue x) (getNumericValue y)
+
+fineOrNan :: Maybe Double -> JSType
+fineOrNan = JSNumber . maybe nAn id
+
+(+.) :: JSType -> JSType -> JSType
+x +. y = let sum = numericOperator (+) x y
+         in maybe (JSString $ show x ++ show y) JSNumber sum
+
+(-.) :: JSType -> JSType -> JSType
+(-.) x = fineOrNan . numericOperator (-) x
+
+(*.) :: JSType -> JSType -> JSType
+(*.) x = fineOrNan . numericOperator (*) x
+
+(/.) :: JSType -> JSType -> JSType
+(/.) x = fineOrNan . numericOperator (/) x

@@ -37,8 +37,14 @@ data Expression = Plus Expression Expression -- +
                 | LiteralNumber Double
                 | LiteralString String
 
-evalExpression :: Expression -> Stack -> IO JSType
-evalExpression (Plus x y) stack = do
+binaryOperand :: (JSType -> JSType -> JSType) -> Expression -> Expression -> Stack -> IO JSType
+binaryOperand f x y stack = do
     vx <- evalExpression x stack
     vy <- evalExpression y stack
-    vx +. vy
+    return $ f vx vy
+
+evalExpression :: Expression -> Stack -> IO JSType
+evalExpression (Plus x y) stack = binaryOperand (+.) x y stack
+evalExpression (Minus x y) stack = binaryOperand (-.) x y stack
+evalExpression (Star x y) stack = binaryOperand (*.) x y stack
+evalExpression (Slash x y) stack = binaryOperand (/.) x y stack
