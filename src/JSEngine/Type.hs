@@ -24,7 +24,7 @@ data JSType = JSNumber Double
                          }
 
 data JSBinding = JSBinding { isConst :: Bool
-                           , valueJS :: JSType
+                           , valueJS :: IORef JSType
                            }
 
 type Stack = [M.Map String JSBinding]
@@ -38,4 +38,6 @@ instance Show JSType where
     show (JSString x) = x
     show (JSBoolean x) = if x then "true" else "false"
     show JSNull = "null"
-    show JSUndefined = "null"
+    show JSUndefined = "undefined"
+    show (JSObject _) = "[object Object]" -- Hmm
+    show (JSFunction _ _ _ _) = "function() { /* implementation */ }" -- Obviously not finished
