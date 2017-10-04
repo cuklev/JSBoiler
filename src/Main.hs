@@ -1,7 +1,7 @@
 module Main where
 
-import JSEngine.Type
-import JSEngine.Statement
+import JSBoiler.Type
+import JSBoiler.Statement
 
 main :: IO ()
 main = error "bolka"

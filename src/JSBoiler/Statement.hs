@@ -1,7 +1,7 @@
-module JSEngine.Statement where
+module JSBoiler.Statement where
 
-import JSEngine.Stack
-import JSEngine.Type
+import JSBoiler.Stack
+import JSBoiler.Type
 
 data Statement = DeclarationStatement [(String, Maybe Expression)]
                | BlockScope [Statement]
