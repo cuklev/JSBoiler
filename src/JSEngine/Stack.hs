@@ -1,4 +1,4 @@
-module Stack
+module JSEngine.Stack
     ( Stack
     , addScope
     , getBindingValue
