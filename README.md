@@ -5,6 +5,6 @@ Would be awesome to make JS interpreter
 - Parser (with Parsec, Parsec is awesome)
 - Standard library
 - Various other stuff
-- **Cabal**ize
+- ~~**Cabal**ize~~
 - Tests
 - Maybe Optimisations
