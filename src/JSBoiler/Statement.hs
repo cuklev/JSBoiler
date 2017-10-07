@@ -22,16 +22,18 @@ data LeftValue = LBinding String
                deriving Show
 
 data Expression = LiteralNumber Double
+                | LiteralString String
+                | LiteralNull
+                | LiteralBoolean Bool
                 | Identifier String
-                | Plus Expression Expression -- +
-                | Minus Expression Expression -- -
-                | Star Expression Expression -- *
-                | Slash Expression Expression -- /
+                | Expression :+: Expression
+                | Expression :-: Expression
+                | Expression :*: Expression
+                | Expression :/: Expression
                 -- more operators
                 -- | PrefixPlus Expression -- +
                 -- | PrefixMinus Expression -- -
-                | Assignment LeftValue Expression -- =
-                -- | Ternary Expression Expression Expression -- ?:
+                | LeftValue :=: Expression
                 | LeftValue LeftValue
                 | FunctionCall Expression [Expression] -- ()
                 -- | New Expression [Expression] -- new :(

@@ -14,4 +14,6 @@ tests = [ "let x = 42"
         , "const y = 11"
         , "const a = 1, b = 2"
         , "const x"
+        , "const x=3+7"
+        , "const x=(4+7)*2"
         ]
