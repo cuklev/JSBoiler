@@ -10,7 +10,7 @@ testMany parser = mapM_ test
         test (str, expected) = it str $
             case parse parser "" str of
                 Right actual -> actual `shouldBe` expected
-                _            -> expectationFailure "no parse"
+                Left error   -> expectationFailure $ show error
 
 spec = do
     describe "literals" $ do
@@ -55,11 +55,20 @@ spec = do
             , ("(4+7)*2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
             ]
 
-    describe "declarations" $ testMany declaration
-        [ ("let x = 42",            Declaration { declarations = [("x", Just (LiteralNumber 42))], mutable = True })
-        , ("const y = 11",          Declaration { declarations = [("y", Just (LiteralNumber 11))], mutable = False })
-        , ("const a = 1, b = 2",    Declaration { declarations = [("a", Just (LiteralNumber 1)), ("b", Just (LiteralNumber 2))], mutable = False })
-        , ("let x",                 Declaration { declarations = [("x", Nothing)], mutable = True })
-        , ("const x = 3 + 7",       Declaration { declarations = [("x", Just (LiteralNumber 3 :+: LiteralNumber 7))], mutable = False })
-        , ("const x = (4 + 7) * 2", Declaration { declarations = [("x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))], mutable = False })
-        ]
+    describe "declarations" $ do
+        describe "let declarations" $ testMany letDeclaration
+            [ ("let x = 42",          LetDeclaration [("x", Just (LiteralNumber 42))])
+            , ("let y = 11",          LetDeclaration [("y", Just (LiteralNumber 11))])
+            , ("let a = 1, b = 2",    LetDeclaration [("a", Just (LiteralNumber 1)), ("b", Just (LiteralNumber 2))])
+            , ("let x",               LetDeclaration [("x", Nothing)])
+            , ("let x = 3 + 7",       LetDeclaration [("x", Just (LiteralNumber 3 :+: LiteralNumber 7))])
+            , ("let x = (4 + 7) * 2", LetDeclaration [("x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))])
+            ]
+
+        describe "const declarations" $ testMany letDeclaration
+            [ ("const x = 42",          ConstDeclaration [("x", LiteralNumber 42)])
+            , ("const y = 11",          ConstDeclaration [("y", LiteralNumber 11)])
+            , ("const a = 1, b = 2",    ConstDeclaration [("a", LiteralNumber 1), ("b", LiteralNumber 2)])
+            , ("const x = 3 + 7",       ConstDeclaration [("x", LiteralNumber 3 :+: LiteralNumber 7)])
+            , ("const x = (4 + 7) * 2", ConstDeclaration [("x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)])
+            ]

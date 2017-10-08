@@ -56,24 +56,33 @@ expression = buildExpressionParser table term
         binaryOperator x f = Infix (spaces >> char x >> return f)
 
 
-declaration = do
+constDeclaration = do
     spaces
-    decl "let" True <|> decl "const" False
+    string "const"
+    space
+    let decls = identifierDeclaration `sepBy` (spaces >> char ',')
+    fmap ConstDeclaration decls
 
     where
-        decl kw m = do
-            string kw
-            space
-            decls <- identifierDeclaration `sepBy` (spaces >> char ',')
-            return Declaration
-                { declarations = decls
-                , mutable      = m
-                }
-
         identifierDeclaration = do
             spaces
             ident <- identifier
             spaces
+            char '='
+            mexpr <- expression
+            return (ident, mexpr)
+
+letDeclaration = do
+    spaces
+    string "let"
+    space
+    let decls = identifierDeclaration `sepBy` (spaces >> char ',')
+    fmap LetDeclaration decls
+
+    where
+        identifierDeclaration = do
+            spaces
+            ident <- identifier
             mexpr <- Just <$> (spaces >> char '=' >> expression)
                           <|> return Nothing
             return (ident, mexpr)
@@ -86,7 +95,8 @@ statement = do
     return result
 
     where
-        statement' = try declaration
+        statement' = try constDeclaration
+                 <|> try letDeclaration
                  <|> fmap Expression expression
 
 

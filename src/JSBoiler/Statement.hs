@@ -3,9 +3,8 @@ module JSBoiler.Statement where
 import JSBoiler.Stack
 import JSBoiler.Type
 
-data Statement = Declaration { declarations :: [(String, Maybe Expression)]
-                             , mutable      :: Bool     -- let or const
-                             }
+data Statement = LetDeclaration [(String, Maybe Expression)] -- should extend to support destructuring
+               | ConstDeclaration [(String, Expression)]      -- should extend to support destructuring
                | Expression Expression
                | BlockScope [Statement]
                | IfStatement { condition :: Expression
