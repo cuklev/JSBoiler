@@ -6,12 +6,12 @@ import Text.Parsec
 import Text.Parsec.Expr
 import JSBoiler.Statement
 
-identifier =
+
+identifier = do
     let underscore = char '_'
         first = underscore <|> letter
         rest = first <|> digit
-    in liftM2 (:) first (many rest)
-
+    liftM2 (:) first (many rest)
 
 literalNumber = LiteralNumber . read <$> many1 digit -- extend for number like 2.3 and 1e10
 
@@ -34,9 +34,9 @@ literalString = fmap LiteralString (within '"' <|> within '\'') -- must add `tem
 
 literalNull = string "null" >> return LiteralNull
 
-literalBoolean = fmap LiteralBoolean
-                ((string "false" >> return False)
-             <|> (string "true" >> return True))
+literalBoolean = LiteralBoolean
+            <$> ((string "false" >> return False)
+            <|>  (string "true" >> return True))
 
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term
@@ -45,23 +45,26 @@ expression = buildExpressionParser table term
                 , [binaryOperator '+' (:+:) AssocLeft, binaryOperator '-' (:-:) AssocLeft]
                 ]
 
-        binaryOperator x f = Infix (char x >> return f)
+        binaryOperator x f = Infix (spaces >> char x >> return f)
 
-        term = between (char '(') (char ')') expression
-           <|> literalNumber
-           <|> literalString
-           <|> literalNull
-           <|> literalBoolean
+        term = do
+            spaces
+            between (char '(') (spaces >> char ')') expression
+                <|> literalNumber
+                <|> literalString
+                <|> literalNull
+                <|> literalBoolean
 
 
-
-declarationStatement = declStatement "let" True
-                   <|> declStatement "const" False
+declarationStatement = do
+    spaces
+    decl "let" True
+        <|> decl "const" False
     where
-        declStatement kw m = do
+        decl kw m = do
             string kw
-            many1 space
-            decls <- identifierDeclaration `sepBy` (char ',' >> spaces)
+            space
+            decls <- identifierDeclaration `sepBy` (spaces >> char ',')
             return Declaration
                 { declarations = decls
                 , mutable      = m
@@ -70,6 +73,6 @@ declarationStatement = declStatement "let" True
         identifierDeclaration = do
             ident <- identifier
             spaces
-            mexpr <- Just <$> (char '=' >> expression)
-                    <|> return Nothing
+            mexpr <- Just <$> (spaces >> char '=' >> expression)
+                          <|> return Nothing
             return (ident, mexpr)
