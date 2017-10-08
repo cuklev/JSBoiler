@@ -1,21 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 module JSBoiler.Parser where
 
-import Control.Monad (liftM2)
+import Control.Monad (liftM2, void)
 import Text.Parsec
 import Text.Parsec.Expr
 import JSBoiler.Statement
 
 
-identifier = do
-    let underscore = char '_'
-        first = underscore <|> letter
-        rest = first <|> digit
-    liftM2 (:) first (many rest)
+jsNumber = read <$> many1 digit -- extend for number like 2.3 and 1e10
 
-literalNumber = LiteralNumber . read <$> many1 digit -- extend for number like 2.3 and 1e10
-
-literalString = fmap LiteralString (within '"' <|> within '\'') -- must add `template strings`
+jsString = within '"' <|> within '\'' -- must add `template strings`
     where
         within q = do
             char q
@@ -32,11 +26,16 @@ literalString = fmap LiteralString (within '"' <|> within '\'') -- must add `tem
             't' -> '\t'
             _   -> x    -- maybe more escapings are needed
 
-literalNull = string "null" >> return LiteralNull
+jsNull = void (string "null")
 
-literalBoolean = LiteralBoolean
-            <$> ((string "false" >> return False)
-            <|>  (string "true" >> return True))
+jsBoolean = (string "false" >> return False)
+        <|> (string "true" >> return True)
+
+identifier = do
+    let underscore = char '_'
+        first = underscore <|> letter
+        rest = first <|> digit
+    liftM2 (:) first (many rest)
 
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term
@@ -50,16 +49,15 @@ expression = buildExpressionParser table term
         term = do
             spaces
             between (char '(') (spaces >> char ')') expression
-                <|> literalNumber
-                <|> literalString
-                <|> literalNull
-                <|> literalBoolean
+                <|> fmap LiteralNumber jsNumber
+                <|> fmap LiteralString jsString
+                <|> fmap (const LiteralNull) jsNull
+                <|> fmap LiteralBoolean jsBoolean
 
 
 declarationStatement = do
     spaces
-    decl "let" True
-        <|> decl "const" False
+    decl "let" True <|> decl "const" False
     where
         decl kw m = do
             string kw
