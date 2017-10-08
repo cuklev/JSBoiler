@@ -60,7 +60,7 @@ constDeclaration = do
     spaces
     string "const"
     space
-    let decls = identifierDeclaration `sepBy` (spaces >> char ',')
+    let decls = identifierDeclaration `sepBy1` (spaces >> char ',')
     fmap ConstDeclaration decls
 
     where
@@ -76,7 +76,7 @@ letDeclaration = do
     spaces
     string "let"
     space
-    let decls = identifierDeclaration `sepBy` (spaces >> char ',')
+    let decls = identifierDeclaration `sepBy1` (spaces >> char ',')
     fmap LetDeclaration decls
 
     where
