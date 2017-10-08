@@ -55,7 +55,8 @@ expression = buildExpressionParser table term
 
         binaryOperator x f = Infix (spaces >> char x >> return f)
 
-declarationStatement = do
+
+declaration = do
     spaces
     decl "let" True <|> decl "const" False
 
@@ -70,11 +71,13 @@ declarationStatement = do
                 }
 
         identifierDeclaration = do
+            spaces
             ident <- identifier
             spaces
             mexpr <- Just <$> (spaces >> char '=' >> expression)
                           <|> return Nothing
             return (ident, mexpr)
+
 
 statement = do
     result <- statement'
@@ -83,7 +86,7 @@ statement = do
     return result
 
     where
-        statement' = try (declarationStatement)
+        statement' = try declaration
                  <|> fmap Expression expression
 
 
