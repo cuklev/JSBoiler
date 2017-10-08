@@ -19,7 +19,7 @@ data Statement = Declaration { declarations :: [(String, Maybe Expression)]
 data LeftValue = LBinding String
                | LMemberAccess Expression String
                | LIndexing Expression Expression
-               deriving Show
+               deriving (Show, Eq)
 
 data Expression = LiteralNumber Double
                 | LiteralString String
@@ -37,4 +37,4 @@ data Expression = LiteralNumber Double
                 | LeftValue LeftValue
                 | FunctionCall Expression [Expression] -- ()
                 -- | New Expression [Expression] -- new :(
-                deriving Show
+                deriving (Show, Eq)
