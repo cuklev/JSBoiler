@@ -6,19 +6,15 @@ import JSBoiler.Type
 data Statement = Declaration { declarations :: [(String, Maybe Expression)]
                              , mutable      :: Bool     -- let or const
                              }
+               | Expression Expression
                | BlockScope [Statement]
                | IfStatement { condition :: Expression
-                             , thenWhat :: Statement
-                             , elseWhat :: Maybe Statement
+                             , thenWhat  :: Statement
+                             , elseWhat  :: Maybe Statement
                              }
                | WhileStatement { condition :: Expression
-                                , body :: Statement
+                                , body      :: Statement
                                 }
-               deriving Show
-
-data LeftValue = LBinding String
-               | LMemberAccess Expression String
-               | LIndexing Expression Expression
                deriving (Show, Eq)
 
 data Expression = LiteralNumber Double
@@ -33,8 +29,11 @@ data Expression = LiteralNumber Double
                 -- more operators
                 -- | PrefixPlus Expression -- +
                 -- | PrefixMinus Expression -- -
-                | LeftValue :=: Expression
-                | LeftValue LeftValue
-                | FunctionCall Expression [Expression] -- ()
+                | Expression :=: Expression
+                -- | FunctionCall Expression [Expression] -- ()
                 -- | New Expression [Expression] -- new :(
                 deriving (Show, Eq)
+
+isLvalue (Identifier _) = True
+-- property access, indexing, destructuring assignment = True
+isLvalue _              = False

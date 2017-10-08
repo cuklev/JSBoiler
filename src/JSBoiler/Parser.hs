@@ -40,12 +40,6 @@ identifier = do
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term
     where
-        table = [ [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
-                , [binaryOperator '+' (:+:) AssocLeft, binaryOperator '-' (:-:) AssocLeft]
-                ]
-
-        binaryOperator x f = Infix (spaces >> char x >> return f)
-
         term = do
             spaces
             between (char '(') (spaces >> char ')') expression
@@ -54,10 +48,17 @@ expression = buildExpressionParser table term
                 <|> fmap (const LiteralNull) jsNull
                 <|> fmap LiteralBoolean jsBoolean
 
+        table = [ [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
+                , [binaryOperator '+' (:+:) AssocLeft, binaryOperator '-' (:-:) AssocLeft]
+                , [binaryOperator '=' (:=:) AssocRight] -- should check if left operand is assignable
+                ]
+
+        binaryOperator x f = Infix (spaces >> char x >> return f)
 
 declarationStatement = do
     spaces
     decl "let" True <|> decl "const" False
+
     where
         decl kw m = do
             string kw
@@ -74,3 +75,23 @@ declarationStatement = do
             mexpr <- Just <$> (spaces >> char '=' >> expression)
                           <|> return Nothing
             return (ident, mexpr)
+
+statement = do
+    result <- statement'
+    spaces
+    eof <|> void (char ';' <|> endOfLine) -- Statements are not required to end with ;
+    return result
+
+    where
+        statement' = try (declarationStatement)
+                 <|> fmap Expression expression
+
+
+parseJavaScript :: String -> Either ParseError [Statement]
+parseJavaScript = parse statements "js"
+    where
+        statements = do
+            result <- many statement
+            spaces
+            eof
+            return result
