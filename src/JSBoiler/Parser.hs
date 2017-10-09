@@ -115,8 +115,8 @@ statement = do
                  <|> fmap Expression expression
 
 
-parseJavaScript :: String -> Either ParseError [Statement]
-parseJavaScript = parse statements "js"
+parseCode :: String -> Either ParseError [Statement]
+parseCode = parse statements "js"
     where
         statements = do
             result <- many statement
