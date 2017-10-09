@@ -54,22 +54,17 @@ expression = buildExpressionParser table term
                 , [binaryOperator '=' (:=:) AssocRight] -- should check if left operand is assignable
                 ]
 
-        binaryOperator x f = Infix $ do
-            char x
-            return f
+        binaryOperator x f = Infix (char x >> return f)
 
-        propertyAccess = do
-            char '.'
-            identifier
+        propertyAccess = char '.' >> between spaces spaces identifier
 
-        indexAccess = between (char '[') (char ']') expression
+        indexAccess = between (char '[') (char ']' >> spaces) expression
 
-        functionCall = between (char '(') (char ')')
-                            expression `sepBy` char ','
+        functionCall = between (char '(' >> spaces) (char ')' >> spaces) (expression `sepBy` char ',')
 
         postfixOperations = fmap Property propertyAccess
                         <|> fmap Index indexAccess
-                        -- <|> fmap FunctionCall functionCall
+                        <|> fmap FunctionCall functionCall
 
         chainPostfixOperations = do
             ps <- many postfixOperations

@@ -80,20 +80,28 @@ spec = do
         describe "arithmetic" $ testMany expression
             [ ("3+7",           LiteralNumber 3 :+: LiteralNumber 7)
             , ("(4+7)*2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
-            , ("3 + 7",           LiteralNumber 3 :+: LiteralNumber 7)
-            , ("(4 + 7) * 2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
-            , ("( 4 + 7 ) * 2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+            , ("3 + 7",         LiteralNumber 3 :+: LiteralNumber 7)
+            , ("(4 + 7) * 2",   (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+            , ("( 4 + 7 ) * 2", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+            , ("x.y + 3",       ("y" `Property` Identifier "x") :+: LiteralNumber 3)
+            , ("x['y'] + 3",    (LiteralString "y" `Index` Identifier "x") :+: LiteralNumber 3)
+            , ("x() + 3",       ([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
             ]
 
     describe "postfix operations" $ do
         describe "property access" $ testMany expression
             [ ("'str'.p1",       "p1" `Property` LiteralString "str")
             , ("'str'.p1.p2",    "p2" `Property` ("p1" `Property` LiteralString "str"))
+            , ("'str' .p1",      "p1" `Property` LiteralString "str")
+            , ("'str'. p1",      "p1" `Property` LiteralString "str")
             ]
 
         describe "indexing" $ testMany expression
             [ ("'str'['p1']",       LiteralString "p1" `Index` LiteralString "str")
             , ("'str'['p1']['p2']", LiteralString "p2" `Index` (LiteralString "p1" `Index` LiteralString "str"))
+            , ("'str' ['p1']",      LiteralString "p1" `Index` LiteralString "str")
+            , ("'str'[ 'p1']",      LiteralString "p1" `Index` LiteralString "str")
+            , ("'str'['p1' ]",      LiteralString "p1" `Index` LiteralString "str")
             ]
 
         describe "function call" $ testMany expression
@@ -101,6 +109,10 @@ spec = do
             , ("x(3)", [LiteralNumber 3] `FunctionCall` Identifier "x")
             , ("x(3, 4)", [LiteralNumber 3, LiteralNumber 4] `FunctionCall` Identifier "x")
             , ("x(3)(4)", [LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
+            , ("x ()", [] `FunctionCall` Identifier "x")
+            , ("x( )", [] `FunctionCall` Identifier "x")
+            , ("x( 3)", [LiteralNumber 3] `FunctionCall` Identifier "x")
+            , ("x(3 )", [LiteralNumber 3] `FunctionCall` Identifier "x")
             ]
 
         describe "mixed" $ testMany expression
