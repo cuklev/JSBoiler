@@ -76,7 +76,7 @@ spec = do
             , ("let x = (4 + 7) * 2", LetDeclaration [("x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))])
             ]
 
-        describe "const declarations" $ testMany letDeclaration
+        describe "const declarations" $ testMany constDeclaration
             [ ("const x = 42",          ConstDeclaration [("x", LiteralNumber 42)])
             , ("const y = 11",          ConstDeclaration [("y", LiteralNumber 11)])
             , ("const a = 1, b = 2",    ConstDeclaration [("a", LiteralNumber 1), ("b", LiteralNumber 2)])

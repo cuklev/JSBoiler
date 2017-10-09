@@ -82,7 +82,6 @@ expression = buildExpressionParser table term
 
 
 constDeclaration = do
-    spaces
     string "const"
     space
     let decls = identifierDeclaration `sepBy1` (spaces >> char ',')
@@ -98,7 +97,6 @@ constDeclaration = do
             return (ident, mexpr)
 
 letDeclaration = do
-    spaces
     string "let"
     space
     let decls = identifierDeclaration `sepBy1` (spaces >> char ',')
@@ -114,6 +112,7 @@ letDeclaration = do
 
 
 statement = do
+    spaces
     result <- statement'
     spaces -- These should not contain end of line
     eof <|> void (char ';' <|> endOfLine) -- Statements are not required to end with ;
