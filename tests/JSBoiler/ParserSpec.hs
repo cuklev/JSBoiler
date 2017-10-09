@@ -22,7 +22,7 @@ testManyFail parser = mapM_ test
 spec = do
     describe "identifiers" $ do
         describe "valid" $ testMany identifier
-            (map (\x -> (x, x)) ["x", "l2", "Abc", "__proto__", "OhoB0_hoU"])
+            $ map (\x -> (x, x)) ["x", "l2", "Abc", "__proto__", "OhoB0_hoU"]
 
         describe "invalid" $ testManyFail identifier
             ["2", "+"]
@@ -51,6 +51,9 @@ spec = do
             ]
 
     describe "expressions" $ do
+        describe "identifiers" $ testMany expression
+            $ map (\x -> (x, Identifier x)) ["x", "l2", "Abc", "__proto__", "OhoB0_hoU"]
+
         describe "numbers" $ testMany expression
             [ ("4",               LiteralNumber 4)
             , ("42",              LiteralNumber 42)

@@ -47,6 +47,7 @@ expression = buildExpressionParser table term
                 <|> fmap LiteralString jsString
                 <|> fmap (const LiteralNull) jsNull
                 <|> fmap LiteralBoolean jsBoolean
+                <|> fmap Identifier identifier
 
         table = [ [Postfix chainPostfixOperations]
                 , [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
