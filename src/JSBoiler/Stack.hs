@@ -24,17 +24,13 @@ addScope stack bindings = do
     scope <- newIORef bindings
     return $ scope : stack
 
-declareBinding :: Bool -> String -> a -> Stack a -> IO Bool
-declareBinding m name value (s:_) = do
+declareBinding :: String -> Binding a -> Stack a -> IO Bool
+declareBinding name binding (s:_) = do
     scope <- readIORef s
     if M.member name scope
         then return False
         else do
-            let binding = Binding
-                    { boundValue = value
-                    , mutable = m
-                    }
-                scope' = M.insert name binding scope
+            let scope' = M.insert name binding scope
             writeIORef s scope'
             return True
 
