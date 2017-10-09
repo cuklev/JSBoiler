@@ -57,13 +57,13 @@ spec = do
 
     describe "postfix operations" $ do
         describe "property access" $ testMany expression
-            [ ("'str'.p1",       LiteralString "str" :.: "p1")
-            , ("'str'.p1.p2",    LiteralString "str" :.: "p1" :.: "p2")
+            [ ("'str'.p1",       "p1" `Property` LiteralString "str")
+            , ("'str'.p1.p2",    "p2" `Property` ("p1" `Property` LiteralString "str"))
             ]
 
         describe "indexing" $ testMany expression
-            [ ("'str'['p1']",       LiteralString "str" :<>: LiteralString "p1")
-            , ("'str'['p1']['p2']", LiteralString "str" :<>: LiteralString "p1" :<>: LiteralString "p2")
+            [ ("'str'['p1']",       LiteralString "p1" `Index` LiteralString "str")
+            , ("'str'['p1']['p2']", LiteralString "p2" `Index` (LiteralString "p1" `Index` LiteralString "str"))
             ]
 
     describe "declarations" $ do

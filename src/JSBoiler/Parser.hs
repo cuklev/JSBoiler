@@ -64,11 +64,17 @@ expression = buildExpressionParser table term
 
         indexAccess = do
             spaces
-            between (char '[') (char ']')
+            between (char '[') (spaces >> char ']')
                     expression
 
-        postfixOperations = (flip (:.:) <$> propertyAccess)
-                        <|> (flip (:<>:) <$> indexAccess)
+        functionCall = do
+            spaces
+            between (char '(') (spaces >> char ')')
+                    expression `sepBy` (spaces >> char ',')
+
+        postfixOperations = fmap Property propertyAccess
+                        <|> fmap Index indexAccess
+                        -- <|> fmap FunctionCall functionCall
 
         chainPostfixOperations = do
             ps <- many postfixOperations

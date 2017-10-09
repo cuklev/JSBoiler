@@ -20,9 +20,13 @@ data Expression = LiteralNumber Double
                 | LiteralString String
                 | LiteralNull
                 | LiteralBoolean Bool
+
                 | Identifier String
-                | Expression :.: String      -- Property access
-                | Expression :<>: Expression -- Indexing
+
+                | Property String Expression  -- Flipped
+                | Index Expression Expression -- Flipped
+                | FunctionCall [Expression] Expression
+
                 | Expression :+: Expression
                 | Expression :-: Expression
                 | Expression :*: Expression
