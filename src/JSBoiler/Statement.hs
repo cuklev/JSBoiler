@@ -4,7 +4,7 @@ import JSBoiler.Stack
 import JSBoiler.Type
 
 data Statement = LetDeclaration [(String, Maybe Expression)] -- should extend to support destructuring
-               | ConstDeclaration [(String, Expression)]      -- should extend to support destructuring
+               | ConstDeclaration [(String, Expression)]     -- should extend to support destructuring
                | Expression Expression
                | BlockScope [Statement]
                | IfStatement { condition :: Expression
@@ -21,6 +21,7 @@ data Expression = LiteralNumber Double
                 | LiteralNull
                 | LiteralBoolean Bool
                 | Identifier String
+                | Expression :.: String     -- Property access
                 | Expression :+: Expression
                 | Expression :-: Expression
                 | Expression :*: Expression

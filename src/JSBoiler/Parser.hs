@@ -48,12 +48,25 @@ expression = buildExpressionParser table term
                 <|> fmap (const LiteralNull) jsNull
                 <|> fmap LiteralBoolean jsBoolean
 
-        table = [ [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
+        table = [ [Postfix chainPostfixOperations]
+                , [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
                 , [binaryOperator '+' (:+:) AssocLeft, binaryOperator '-' (:-:) AssocLeft]
                 , [binaryOperator '=' (:=:) AssocRight] -- should check if left operand is assignable
                 ]
 
         binaryOperator x f = Infix (spaces >> char x >> return f)
+
+        propertyAccess = do
+            spaces
+            char '.'
+            spaces
+            identifier
+
+        postfixOperations = flip (:.:) <$> propertyAccess
+
+        chainPostfixOperations = do
+            ps <- many postfixOperations
+            return $ \e -> foldl (\e p -> p e) e ps
 
 
 constDeclaration = do
@@ -90,7 +103,7 @@ letDeclaration = do
 
 statement = do
     result <- statement'
-    spaces
+    spaces -- These should not contain end of line
     eof <|> void (char ';' <|> endOfLine) -- Statements are not required to end with ;
     return result
 
