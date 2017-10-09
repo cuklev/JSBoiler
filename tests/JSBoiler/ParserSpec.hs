@@ -12,7 +12,21 @@ testMany parser = mapM_ test
                 Right actual -> actual `shouldBe` expected
                 Left error   -> expectationFailure $ show error
 
+testManyFail parser = mapM_ test
+    where
+        test str = it str $
+            case parse parser "" str of
+                Right actual -> expectationFailure $ "Parsed as " ++ show actual
+                Left _   -> shouldBe 1 1
+
 spec = do
+    describe "identifiers" $ do
+        describe "valid" $ testMany identifier
+            (map (\x -> (x, x)) ["x", "l2", "Abc", "__proto__", "OhoB0_hoU"])
+
+        describe "invalid" $ testManyFail identifier
+            ["2", "+"]
+
     describe "literals" $ do
         describe "numbers" $ testMany jsNumber
             [ ("4",               4)
