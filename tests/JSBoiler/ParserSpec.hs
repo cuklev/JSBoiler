@@ -80,6 +80,9 @@ spec = do
         describe "arithmetic" $ testMany expression
             [ ("3+7",           LiteralNumber 3 :+: LiteralNumber 7)
             , ("(4+7)*2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+            , ("3 + 7",           LiteralNumber 3 :+: LiteralNumber 7)
+            , ("(4 + 7) * 2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+            , ("( 4 + 7 ) * 2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
             ]
 
     describe "postfix operations" $ do

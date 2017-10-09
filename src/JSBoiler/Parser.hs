@@ -40,14 +40,13 @@ identifier = do
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term
     where
-        term = do
-            spaces
-            between (char '(') (spaces >> char ')') expression
-                <|> fmap LiteralNumber jsNumber
-                <|> fmap LiteralString jsString
-                <|> fmap (const LiteralNull) jsNull
-                <|> fmap LiteralBoolean jsBoolean
-                <|> fmap Identifier identifier
+        term = between spaces spaces
+             $ between (char '(') (char ')') expression
+           <|> fmap LiteralNumber jsNumber
+           <|> fmap LiteralString jsString
+           <|> fmap (const LiteralNull) jsNull
+           <|> fmap LiteralBoolean jsBoolean
+           <|> fmap Identifier identifier
 
         table = [ [Postfix chainPostfixOperations]
                 , [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
@@ -55,23 +54,18 @@ expression = buildExpressionParser table term
                 , [binaryOperator '=' (:=:) AssocRight] -- should check if left operand is assignable
                 ]
 
-        binaryOperator x f = Infix (spaces >> char x >> return f)
+        binaryOperator x f = Infix $ do
+            char x
+            return f
 
         propertyAccess = do
-            spaces
             char '.'
-            spaces
             identifier
 
-        indexAccess = do
-            spaces
-            between (char '[') (spaces >> char ']')
-                    expression
+        indexAccess = between (char '[') (char ']') expression
 
-        functionCall = do
-            spaces
-            between (char '(') (spaces >> char ')')
-                    expression `sepBy` (spaces >> char ',')
+        functionCall = between (char '(') (char ')')
+                            expression `sepBy` char ','
 
         postfixOperations = fmap Property propertyAccess
                         <|> fmap Index indexAccess
@@ -85,7 +79,7 @@ expression = buildExpressionParser table term
 constDeclaration = do
     string "const"
     space
-    let decls = identifierDeclaration `sepBy1` (spaces >> char ',')
+    let decls = identifierDeclaration `sepBy1` char ','
     fmap ConstDeclaration decls
 
     where
@@ -100,14 +94,15 @@ constDeclaration = do
 letDeclaration = do
     string "let"
     space
-    let decls = identifierDeclaration `sepBy1` (spaces >> char ',')
+    let decls = identifierDeclaration `sepBy1` char ','
     fmap LetDeclaration decls
 
     where
         identifierDeclaration = do
             spaces
             ident <- identifier
-            mexpr <- Just <$> (spaces >> char '=' >> expression)
+            spaces
+            mexpr <- Just <$> (char '=' >> expression)
                           <|> return Nothing
             return (ident, mexpr)
 
