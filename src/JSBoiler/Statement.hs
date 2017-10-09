@@ -21,7 +21,8 @@ data Expression = LiteralNumber Double
                 | LiteralNull
                 | LiteralBoolean Bool
                 | Identifier String
-                | Expression :.: String     -- Property access
+                | Expression :.: String      -- Property access
+                | Expression :<>: Expression -- Indexing
                 | Expression :+: Expression
                 | Expression :-: Expression
                 | Expression :*: Expression

@@ -55,10 +55,16 @@ spec = do
             , ("(4+7)*2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
             ]
 
-    describe "property access" $ testMany expression
-        [ ("'str'.p1",       LiteralString "str" :.: "p1")
-        , ("'str'.p1.p2",    LiteralString "str" :.: "p1" :.: "p2")
-        ]
+    describe "postfix operations" $ do
+        describe "property access" $ testMany expression
+            [ ("'str'.p1",       LiteralString "str" :.: "p1")
+            , ("'str'.p1.p2",    LiteralString "str" :.: "p1" :.: "p2")
+            ]
+
+        describe "indexing" $ testMany expression
+            [ ("'str'['p1']",       LiteralString "str" :<>: LiteralString "p1")
+            , ("'str'['p1']['p2']", LiteralString "str" :<>: LiteralString "p1" :<>: LiteralString "p2")
+            ]
 
     describe "declarations" $ do
         describe "let declarations" $ testMany letDeclaration

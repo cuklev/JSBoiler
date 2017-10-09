@@ -62,7 +62,13 @@ expression = buildExpressionParser table term
             spaces
             identifier
 
-        postfixOperations = flip (:.:) <$> propertyAccess
+        indexAccess = do
+            spaces
+            between (char '[') (char ']')
+                    expression
+
+        postfixOperations = (flip (:.:) <$> propertyAccess)
+                        <|> (flip (:<>:) <$> indexAccess)
 
         chainPostfixOperations = do
             ps <- many postfixOperations
