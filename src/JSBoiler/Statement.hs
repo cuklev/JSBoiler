@@ -1,6 +1,5 @@
 module JSBoiler.Statement where
 
-import JSBoiler.Stack
 import JSBoiler.Type
 
 data Statement = LetDeclaration [(String, Maybe Expression)] -- should extend to support destructuring
