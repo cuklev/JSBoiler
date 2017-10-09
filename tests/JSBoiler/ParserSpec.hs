@@ -93,9 +93,21 @@ spec = do
             , ("'str'['p1']['p2']", LiteralString "p2" `Index` (LiteralString "p1" `Index` LiteralString "str"))
             ]
 
+        describe "function call" $ testMany expression
+            [ ("x()", [] `FunctionCall` Identifier "x")
+            , ("x(3)", [LiteralNumber 3] `FunctionCall` Identifier "x")
+            , ("x(3, 4)", [LiteralNumber 3, LiteralNumber 4] `FunctionCall` Identifier "x")
+            , ("x(3)(4)", [LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
+            ]
+
         describe "mixed" $ testMany expression
             [ ("x.y['z']", LiteralString "z" `Index` ("y" `Property` Identifier "x"))
             , ("x['y'].z", "z" `Property` (LiteralString "y" `Index` Identifier "x"))
+            , ("x.y('z')", [LiteralString "z"] `FunctionCall` ("y" `Property` Identifier "x"))
+            , ("x['y']('z')", [LiteralString "z"] `FunctionCall` (LiteralString "y" `Index` Identifier "x"))
+            , ("x('y').z", "z" `Property` ([LiteralString "y"] `FunctionCall` Identifier "x"))
+            , ("x('y')['z']", LiteralString "z" `Index` ([LiteralString "y"] `FunctionCall` Identifier "x"))
+            , ("x.y['z'](0)", [LiteralNumber 0] `FunctionCall` (LiteralString "z" `Index` ("y" `Property` Identifier "x")))
             ]
 
     describe "declarations" $ do
