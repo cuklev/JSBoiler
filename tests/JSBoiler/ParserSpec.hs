@@ -83,6 +83,11 @@ spec = do
             , ("'str'['p1']['p2']", LiteralString "p2" `Index` (LiteralString "p1" `Index` LiteralString "str"))
             ]
 
+        describe "mixed" $ testMany expression
+            [ ("x.y['z']", LiteralString "z" `Index` ("y" `Property` Identifier "x"))
+            , ("x['y'].z", "z" `Property` (LiteralString "y" `Index` Identifier "x"))
+            ]
+
     describe "declarations" $ do
         describe "let declarations" $ testMany letDeclaration
             [ ("let x = 42",          LetDeclaration [("x", Just (LiteralNumber 42))])
