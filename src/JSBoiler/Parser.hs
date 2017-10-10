@@ -90,9 +90,7 @@ constDeclaration = do
 
     where
         identifierDeclaration = do
-            spaces
-            ident <- identifier
-            spaces
+            ident <- between spaces spaces identifier
             char '='
             mexpr <- expression
             return (ident, mexpr)
@@ -105,11 +103,8 @@ letDeclaration = do
 
     where
         identifierDeclaration = do
-            spaces
-            ident <- identifier
-            spaces
-            mexpr <- Just <$> (char '=' >> expression)
-                          <|> return Nothing
+            ident <- between spaces spaces identifier
+            mexpr <- optionMaybe (char '=' >> expression)
             return (ident, mexpr)
 
 
