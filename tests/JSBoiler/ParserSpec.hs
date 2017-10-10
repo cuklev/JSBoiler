@@ -80,16 +80,19 @@ spec = do
             , ("'line1\\nline2'", LiteralString "line1\nline2")
             ]
 
-        describe "arithmetic" $ testMany expression
-            [ ("3+7",           LiteralNumber 3 :+: LiteralNumber 7)
-            , ("(4+7)*2",       (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
-            , ("3 + 7",         LiteralNumber 3 :+: LiteralNumber 7)
-            , ("(4 + 7) * 2",   (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
-            , ("( 4 + 7 ) * 2", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
-            , ("x.y + 3",       ("y" `Property` Identifier "x") :+: LiteralNumber 3)
-            , ("x['y'] + 3",    (LiteralString "y" `Index` Identifier "x") :+: LiteralNumber 3)
-            , ("x() + 3",       ([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
-            ]
+        describe "arithmetic" $ testMany expression $
+               allShouldBe ["3+7", "3 +7", "3+ 7", "3 + 7"] (LiteralNumber 3 :+: LiteralNumber 7)
+            ++ allShouldBe ["3-7", "3 -7", "3- 7", "3 - 7"] (LiteralNumber 3 :-: LiteralNumber 7)
+            ++ allShouldBe ["3*7", "3 *7", "3* 7", "3 * 7"] (LiteralNumber 3 :*: LiteralNumber 7)
+            ++ allShouldBe ["3/7", "3 /7", "3/ 7", "3 / 7"] (LiteralNumber 3 :/: LiteralNumber 7)
+
+            ++ allShouldBe ["4+7*2", "4 +7*2", "4+ 7*2", "4+7 *2", "4+7* 2"] (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
+            ++ allShouldBe ["(4+7)*2", "( 4+7)*2", "(4 +7)*2", "(4+ 7)*2", "(4+7 )*2", "(4+7) *2", "(4+7)* 2"] ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+
+        describe "other" $ testMany expression $
+               allShouldBe ["x.y+3", "x .y+3", "x. y+3", "x.y +3", "x.y+ 3"] (("y" `Property` Identifier "x") :+: LiteralNumber 3)
+            ++ allShouldBe ["x['y']+3", "x ['y']+3", "x[ 'y']+3", "x['y' ]+3", "x['y'] +3", "x['y']+ 3"] ((LiteralString "y" `Index` Identifier "x") :+: LiteralNumber 3)
+            ++ allShouldBe ["x()+3", "x ()+3", "x( )+3", "x() +3", "x()+ 3"] (([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
 
     describe "postfix operations" $ do
         describe "property access" $ testMany expression
