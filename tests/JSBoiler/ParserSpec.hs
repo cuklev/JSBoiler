@@ -12,12 +12,14 @@ testMany parser = mapM_ test
                 Right actual -> actual `shouldBe` expected
                 Left error   -> expectationFailure $ show error
 
+allShouldBe strs expected = map (\x -> (x, expected)) strs
+
 testManyFail parser = mapM_ test
     where
         test str = it str $
             case parse parser "" str of
                 Right actual -> expectationFailure $ "Parsed as " ++ show actual
-                Left _   -> return ()
+                Left _       -> return ()
 
 spec = do
     describe "identifiers" $ do
@@ -28,23 +30,17 @@ spec = do
             ["2", "+"]
 
     describe "literals" $ do
-        describe "numbers" $ testMany jsNumber
-            $ map (\x -> (x, read x))
-            [ "4", "42", "+5", "-5"
-            , "1.3", "1.", ".5"
-            , "+1.3", "+1.", "+.5"
-            , "-1.3", "-1.", "-.5"
-            , "1e10", "1.e10", "1.1e3", ".5e2"
-            , "1E10", "1.E10", "1.1E3", ".5E2"
-            , "+1e10", "+1.e10", "+1.1e3", "+.5e2"
-            , "-1e10", "-1.e10", "-1.1e3", "-.5e2"
-            , "1e+10", "1.e+10", "1.1e+3", ".5e+2"
-            , "+1e+10", "+1.e+10", "+1.1e+3", "+.5e+2"
-            , "-1e+10", "-1.e+10", "-1.1e+3", "-.5e+2"
-            , "1e-10", "1.e-10", "1.1e3", ".5e+2"
-            , "+1e-10", "+1.e-10", "+1.1e3", "+.5e+2"
-            , "-1e-10", "-1.e-10", "-1.1e3", "-.5e+2"
+        describe "numbers" $ testMany jsNumber $
+            [ ("4", 4)
+            , ("42", 42)
             ]
+            ++ allShouldBe ["0", ".0", "0.", "0.0", "+0", "+.0", "+0.", "+0.0", "-0", "-.0", "-0.", "-0.0"] 0
+            ++ allShouldBe ["1", "1.", "1.0", "+1", "+1.", "+1.0"] 1
+            ++ allShouldBe ["-.1", "-0.1"] 0.1
+            ++ allShouldBe ["-1", "-1.", "-1.0"] (-1)
+            ++ allShouldBe ["1e2", "10e1", "100e0", "1000e-1", "1.e2", "10e+1", "1000.0e-1"] 100
+            ++ allShouldBe ["1.3e2", "+1.3e2", "+.13e3", "1.3E2", "+1.3E2", "+.13E3"] 130
+            ++ allShouldBe ["-.5e1", "-5.e0", "-5.0e0"] (-5)
 
         describe "strings" $ testMany jsString
             [ ("'string'",        "string")
