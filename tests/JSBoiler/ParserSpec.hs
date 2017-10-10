@@ -46,6 +46,11 @@ spec = do
         describe "strings" $ testMany jsString
             [ ("'string'",        "string")
             , ("\"string\"",      "string")
+            , ("'\\0'", "\0")
+            , ("'\\n'", "\n")
+            , ("'\\r'", "\r")
+            , ("'\\t'", "\t")
+            , ("'\\b'", "\b")
             , ("'line1\\nline2'", "line1\nline2")
             ]
 

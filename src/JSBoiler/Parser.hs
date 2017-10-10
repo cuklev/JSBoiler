@@ -24,11 +24,9 @@ jsNumber = do
 
 jsString = within '"' <|> within '\'' -- must add `template strings`
     where
-        within q = do
-            char q
-            r <- many (noneOf [q] <|> escapedChar)
-            char q
-            return r
+        within q = let quote = char q
+                       chars = escapedChar <|> noneOf [q]
+                   in between quote quote $ many chars
 
         escapedChar = char '\\' >> fmap escape anyChar
         escape x = case x of
