@@ -2,9 +2,15 @@
 Would be awesome to make JS interpreter
 
 ### TODO
-- Parser (with Parsec, Parsec is awesome)
+- All kinds of binary operators
+- Unary operators
+- Ternary operator
+- Functions
+- Objects
+- Arrays
 - Standard library
 - Various other stuff
 - ~~**Cabal**ize~~
-- Tests
+- ~~Setup testing~~
+  - more tests will always be good
 - Maybe Optimisations
