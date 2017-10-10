@@ -132,19 +132,38 @@ spec = do
             ]
 
     describe "declarations" $ do
-        describe "let declarations" $ testMany letDeclaration
-            [ ("let x = 42",          LetDeclaration [("x", Just (LiteralNumber 42))])
-            , ("let y = 11",          LetDeclaration [("y", Just (LiteralNumber 11))])
-            , ("let a = 1, b = 2",    LetDeclaration [("a", Just (LiteralNumber 1)), ("b", Just (LiteralNumber 2))])
-            , ("let x",               LetDeclaration [("x", Nothing)])
-            , ("let x = 3 + 7",       LetDeclaration [("x", Just (LiteralNumber 3 :+: LiteralNumber 7))])
-            , ("let x = (4 + 7) * 2", LetDeclaration [("x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))])
-            ]
+        describe "let declarations" $ do
+            describe "valid" $ testMany letDeclaration
+                [ ("let x = 42",          LetDeclaration [("x", Just (LiteralNumber 42))])
+                , ("let y = 11",          LetDeclaration [("y", Just (LiteralNumber 11))])
+                , ("let a = 1, b = 2",    LetDeclaration [("a", Just (LiteralNumber 1)), ("b", Just (LiteralNumber 2))])
+                , ("let x",               LetDeclaration [("x", Nothing)])
+                , ("let x = 3 + 7",       LetDeclaration [("x", Just (LiteralNumber 3 :+: LiteralNumber 7))])
+                , ("let x = 3 + 7, y",    LetDeclaration [("x", Just (LiteralNumber 3 :+: LiteralNumber 7)), ("y", Nothing)])
+                , ("let x = (4 + 7) * 2", LetDeclaration [("x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))])
+                ]
 
-        describe "const declarations" $ testMany constDeclaration
-            [ ("const x = 42",          ConstDeclaration [("x", LiteralNumber 42)])
-            , ("const y = 11",          ConstDeclaration [("y", LiteralNumber 11)])
-            , ("const a = 1, b = 2",    ConstDeclaration [("a", LiteralNumber 1), ("b", LiteralNumber 2)])
-            , ("const x = 3 + 7",       ConstDeclaration [("x", LiteralNumber 3 :+: LiteralNumber 7)])
-            , ("const x = (4 + 7) * 2", ConstDeclaration [("x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)])
-            ]
+            describe "invalid" $ testManyFail constDeclaration
+                [ "let 2 = x"
+                , "let = x"
+                , "let = 3"
+                ]
+
+        describe "const declarations" $ do
+            describe "valid" $ testMany constDeclaration
+                [ ("const x = 42",          ConstDeclaration [("x", LiteralNumber 42)])
+                , ("const y = 11",          ConstDeclaration [("y", LiteralNumber 11)])
+                , ("const a = 1, b = 2",    ConstDeclaration [("a", LiteralNumber 1), ("b", LiteralNumber 2)])
+                , ("const x = 3 + 7",       ConstDeclaration [("x", LiteralNumber 3 :+: LiteralNumber 7)])
+                , ("const x = (4 + 7) * 2", ConstDeclaration [("x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)])
+                ]
+
+            describe "invalid" $ testManyFail constDeclaration
+                [ "const x"
+                , "const x, y"
+                , "const x = 4, y"
+                , "const x, y = 4"
+                , "const 2 = x"
+                , "const = x"
+                , "const = 3"
+                ]
