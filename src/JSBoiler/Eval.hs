@@ -10,7 +10,9 @@ evalExpression stack expr = case expr of
     LiteralBoolean x -> return $ JSBoolean x
     LiteralNull      -> return JSNull
 
-    Identifier x     -> maybe (error $ x ++ " is not defined") id <$> getBindingValue x stack
+    Identifier x     -> getBindingValue x stack
+                            >>= maybe (error $ x ++ " is not defined") return
+
     _                -> error "Not implemented"
 
 evalStatement :: Stack -> Statement -> IO (Maybe JSType)

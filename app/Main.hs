@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Exception (try, SomeException)
 import Control.Monad (void)
 import System.Environment (getArgs)
 import System.IO (readFile, hFlush, stdout)
@@ -22,8 +23,12 @@ repl = do
     -- catch exceptions if evalCode is nasty
     case parseCode line of
         Left err -> print err
-        Right statements -> evalCode stack statements
-                            >>= maybe (return ()) print
+        Right statements -> do
+            ee <- (try :: IO a -> IO (Either SomeException a)) (evalCode stack statements)
+            case ee of
+                Left exception -> print exception
+                Right Nothing -> return ()
+                Right (Just result) -> print result
     repl
 
 runFile :: String -> [String] -> IO ()
