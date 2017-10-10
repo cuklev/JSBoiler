@@ -9,16 +9,18 @@ import JSBoiler.Statement
 
 jsNumber = do
     let digits = many1 digit
-        signed x = liftM2 (:) (char '-') x
+        signed x = char '-' ++: x
                <|> (char '+' >> x)
                <|> x
 
         (+++) = liftM2 (++)
+        (++:) = liftM2 (:)
 
     fmap read $ signed $ choice
         [ digits +++ option "" (string "." +++ option "0" digits)
         , return "0" +++ string "." +++ digits
         ]
+        +++ option "" ((char 'e' <|> char 'E') ++: signed digits)
 
 jsString = within '"' <|> within '\'' -- must add `template strings`
     where
