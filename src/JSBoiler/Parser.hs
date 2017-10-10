@@ -7,7 +7,18 @@ import Text.Parsec.Expr
 import JSBoiler.Statement
 
 
-jsNumber = read <$> many1 digit -- extend for number like 2.3 and 1e10
+jsNumber = do
+    let digits = many1 digit
+        signed x = liftM2 (:) (char '-') x
+               <|> (char '+' >> x)
+               <|> x
+
+        (+++) = liftM2 (++)
+
+    fmap read $ signed $ choice
+        [ digits +++ option "" (string "." +++ option "0" digits)
+        , return "0" +++ string "." +++ digits
+        ]
 
 jsString = within '"' <|> within '\'' -- must add `template strings`
     where
