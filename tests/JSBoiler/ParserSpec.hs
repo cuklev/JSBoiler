@@ -17,7 +17,7 @@ testManyFail parser = mapM_ test
         test str = it str $
             case parse parser "" str of
                 Right actual -> expectationFailure $ "Parsed as " ++ show actual
-                Left _   -> shouldBe 1 1
+                Left _   -> return ()
 
 spec = do
     describe "identifiers" $ do
