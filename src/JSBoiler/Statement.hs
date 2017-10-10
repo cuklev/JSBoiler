@@ -1,8 +1,10 @@
 module JSBoiler.Statement where
 
-data Statement = LetDeclaration [(String, Maybe Expression)] -- should extend to support destructuring
+data Statement = Expression Expression
+
+               | LetDeclaration [(String, Maybe Expression)] -- should extend to support destructuring
                | ConstDeclaration [(String, Expression)]     -- should extend to support destructuring
-               | Expression Expression
+
                | BlockScope [Statement]
                | IfStatement { condition :: Expression
                              , thenWhat  :: Statement

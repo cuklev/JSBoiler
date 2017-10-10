@@ -12,6 +12,14 @@ data JSType = JSNumber Double
             | JSNull
             | JSObject (IORef Object)
 
+instance Show JSType where -- don't do it like this
+    show (JSNumber x) = show x
+    show (JSString x) = show x
+    show (JSBoolean x) = if x then "true" else "false"
+    show JSUndefined = "undefined"
+    show JSNull = "null"
+    show _ = error "Not implemented"
+
 data Object = Object { properties :: Map String Property
                      , behaviour :: Maybe Function
                      , prototype :: Maybe Object
