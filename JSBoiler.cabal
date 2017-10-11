@@ -15,7 +15,7 @@ build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
 
-executable JSBoiler
+executable boiler
   main-is:             Main.hs
   hs-source-dirs:      app
   build-depends:       base
