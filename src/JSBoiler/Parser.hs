@@ -111,7 +111,7 @@ letDeclaration = do
 statement = do
     spaces
     result <- statement'
-    spaces -- These should not contain end of line
+    -- Should detect if endOfLine was parsed
     eof <|> void (char ';' <|> endOfLine) -- Statements are not required to end with ;
     return result
 
@@ -126,6 +126,5 @@ parseCode = parse statements "js"
     where
         statements = do
             result <- many statement
-            spaces
             eof
             return result
