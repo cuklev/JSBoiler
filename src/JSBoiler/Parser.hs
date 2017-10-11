@@ -37,16 +37,15 @@ jsString = within '"' <|> within '\'' -- must add `template strings`
             't' -> '\t'
             _   -> x    -- maybe more escapings are needed
 
-jsNull = void (string "null")
+jsNull = string "null" >> notFollowedBy identifierSymbol
 
-jsBoolean = (string "false" >> return False)
-        <|> (string "true" >> return True)
+jsBoolean = (string "false" >> notFollowedBy identifierSymbol >> return False)
+        <|> (string "true" >> notFollowedBy identifierSymbol >> return True)
 
+identifierSymbol = letter <|> digit <|> char '_'
 identifier = do
-    let underscore = char '_'
-        first = underscore <|> letter
-        rest = first <|> digit
-    liftM2 (:) first (many rest)
+    let first = letter <|> char '_'
+    liftM2 (:) first (many identifierSymbol)
 
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term
@@ -55,8 +54,8 @@ expression = buildExpressionParser table term
              $ between (char '(') (char ')') expression
            <|> fmap LiteralNumber jsNumber
            <|> fmap LiteralString jsString
-           <|> fmap (const LiteralNull) jsNull
-           <|> fmap LiteralBoolean jsBoolean
+           <|> try (fmap (const LiteralNull) jsNull)
+           <|> try (fmap LiteralBoolean jsBoolean)
            <|> fmap Identifier identifier
 
         table = [ [Postfix chainPostfixOperations]
