@@ -53,15 +53,16 @@ addScope stack bindings = do
     scope <- newIORef bindings
     return $ scope : stack
 
-declareBinding :: String -> Binding -> Stack -> IO Bool
+canDeclareBinding :: String -> Stack -> IO Bool
+canDeclareBinding name (s:_) = do
+    scope <- readIORef s
+    return $ not $ M.member name scope
+
+declareBinding :: String -> Binding -> Stack -> IO ()
 declareBinding name binding (s:_) = do
     scope <- readIORef s
-    if M.member name scope
-        then return False
-        else do
-            let scope' = M.insert name binding scope
-            writeIORef s scope'
-            return True
+    let scope' = M.insert name binding scope
+    writeIORef s scope'
 
 getBindingValue :: String -> Stack -> IO (Maybe JSType)
 getBindingValue _ [] = return Nothing

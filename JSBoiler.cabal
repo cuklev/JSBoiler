@@ -30,8 +30,8 @@ library
   exposed-modules:     JSBoiler.Parser
                        JSBoiler.Statement
                        JSBoiler.Eval
-  other-modules:       JSBoiler.Type
   other-modules:       JSBoiler.Builtin
+                       JSBoiler.Type
   -- other-extensions:
   build-depends:       base >=4.9 && <4.10
                      , containers >=0.5 && <0.6
