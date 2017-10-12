@@ -2,8 +2,8 @@ module JSBoiler.Statement where
 
 data Statement = Expression Expression
 
-               | LetDeclaration [(String, Maybe Expression)] -- should extend to support destructuring
-               | ConstDeclaration [(String, Expression)]     -- should extend to support destructuring
+               | ConstDeclaration [(Declaration, Expression)]
+               | LetDeclaration [(Declaration, Maybe Expression)]
 
                | BlockScope [Statement]
                | IfStatement { condition :: Expression
@@ -38,6 +38,6 @@ data Expression = LiteralNumber Double
                 -- | New Expression [Expression] -- new :(
                 deriving (Show, Eq)
 
-isLvalue (Identifier _) = True
--- property access, indexing, destructuring assignment = True
-isLvalue _              = False
+data Declaration = DeclareBinding String
+                 -- Extend to suppord destructuring
+                 deriving (Show, Eq)

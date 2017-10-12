@@ -81,30 +81,29 @@ expression = buildExpressionParser table term
             return $ \e -> foldl (\e p -> p e) e ps
 
 
+declaration = DeclareBinding <$> between spaces spaces identifier
+            -- extend to support destructuring
+
 constDeclaration = do
     string "const"
     space
-    let decls = identifierDeclaration `sepBy1` char ','
-    fmap ConstDeclaration decls
+    ConstDeclaration <$> decl' `sepBy1` char ','
 
-    where
-        identifierDeclaration = do
-            ident <- between spaces spaces identifier
+    where decl' = do
+            decl <- declaration
             char '='
             mexpr <- expression
-            return (ident, mexpr)
+            return (decl, mexpr)
 
 letDeclaration = do
     string "let"
     space
-    let decls = identifierDeclaration `sepBy1` char ','
-    fmap LetDeclaration decls
+    LetDeclaration <$> decl' `sepBy1` char ','
 
-    where
-        identifierDeclaration = do
-            ident <- between spaces spaces identifier
+    where decl' = do
+            decl <- declaration
             mexpr <- optionMaybe (char '=' >> expression)
-            return (ident, mexpr)
+            return (decl, mexpr)
 
 
 statement = do

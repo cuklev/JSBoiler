@@ -4,6 +4,8 @@ import Data.IORef
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as M
 
+import JSBoiler.Statement
+
 
 data JSType = JSNumber Double
             | JSString String
@@ -53,16 +55,19 @@ addScope stack bindings = do
     scope <- newIORef bindings
     return $ scope : stack
 
-canDeclareBinding :: String -> Stack -> IO Bool
-canDeclareBinding name (s:_) = do
-    scope <- readIORef s
-    return $ not $ M.member name scope
+checkForAlreadyDeclared :: ScopeBindings -> Declaration -> Maybe String
+checkForAlreadyDeclared scope (DeclareBinding name)
+    | M.member name scope = Just name
+    | otherwise           = Nothing
 
-declareBinding :: String -> Binding -> Stack -> IO ()
-declareBinding name binding (s:_) = do
-    scope <- readIORef s
-    let scope' = M.insert name binding scope
-    writeIORef s scope'
+declare :: IORef ScopeBindings -> Bool -> Declaration -> JSType -> IO ()
+declare scopeRef mut (DeclareBinding name) value =
+    let binding = Binding
+            { boundValue = value
+            , mutable = mut
+            }
+    in modifyIORef' scopeRef $ M.insert name binding
+declare scopeRef mut _ _ = error "Not implemented" -- implement destructuring
 
 getBindingValue :: String -> Stack -> IO (Maybe JSType)
 getBindingValue _ [] = return Nothing

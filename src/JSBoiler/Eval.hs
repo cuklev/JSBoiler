@@ -1,7 +1,8 @@
 module JSBoiler.Eval where
 
-import Control.Monad (liftM2)
+import Control.Monad (liftM2, forM_)
 import Data.Maybe (fromMaybe)
+import Data.IORef (readIORef)
 import qualified Data.Map as M (fromList)
 
 import JSBoiler.Statement
@@ -37,36 +38,24 @@ evalStatement :: Stack -> Statement -> IO (Maybe JSType)
 evalStatement stack statement = case statement of
     Expression x -> Just <$> evalExpression stack x
 
-    LetDeclaration declarations -> do
-        mapM_ (\(name, mexpr) -> do
-            canDeclare <- canDeclareBinding name stack
-            if canDeclare
-                then do
-                    value <- case mexpr of
-                        Nothing   -> return JSUndefined
-                        Just expr -> evalExpression stack expr
-                    let binding = Binding
-                            { boundValue = value
-                            , mutable = True
-                            }
-                    declareBinding name binding stack
-                else error $ "Identifier '" ++ show name ++ "' has already been declared")
-            declarations
+    ConstDeclaration declarations -> do
+        forM_ declarations $ \(decl, expr) -> do
+            let scopeRef = head stack
+            scope <- readIORef scopeRef
+            case checkForAlreadyDeclared scope decl of
+                Nothing -> evalExpression stack expr
+                            >>= declare scopeRef False decl
+                Just name -> error $ "Identifier '" ++ show name ++ "' has already been declared"
         return Nothing
 
-    ConstDeclaration declarations -> do
-        mapM_ (\(name, expr) -> do
-            canDeclare <- canDeclareBinding name stack
-            if canDeclare
-                then do
-                    value <- evalExpression stack expr
-                    let binding = Binding
-                            { boundValue = value
-                            , mutable = False
-                            }
-                    declareBinding name binding stack
-                else error $ "Identifier '" ++ show name ++ "' has already been declared")
-            declarations
+    LetDeclaration declarations -> do
+        forM_ declarations $ \(decl, mexpr) -> do
+            let scopeRef = head stack
+            scope <- readIORef scopeRef
+            case checkForAlreadyDeclared scope decl of
+                Nothing -> maybe (return JSUndefined) (evalExpression stack) mexpr
+                            >>= declare scopeRef True decl
+                Just name -> error $ "Identifier '" ++ show name ++ "' has already been declared"
         return Nothing
 
     _            -> error "Not implemented"
