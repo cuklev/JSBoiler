@@ -108,6 +108,6 @@ callFunction obj func args = do
 
     newStack <- addScope (functionScope func) $ M.fromList
             $ zipWith (\ident value -> (ident, Binding { boundValue = value, mutable = True })) (argumentNames func) args
-            ++ [("this", Binding { boundValue = this, mutable = False })]
+--            ++ [("this", Binding { boundValue = this, mutable = False })]
 
     function func newStack
