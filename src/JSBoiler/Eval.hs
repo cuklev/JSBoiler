@@ -3,11 +3,12 @@ module JSBoiler.Eval where
 import Control.Monad (liftM2, forM_)
 import Data.Maybe (fromMaybe)
 import Data.IORef (readIORef)
-import qualified Data.Map as M (fromList)
+import qualified Data.Map.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type
-import JSBoiler.Builtin
+import JSBoiler.Eval.Binding
+import JSBoiler.Eval.Operator
 
 
 evalExpression :: Stack -> Expression -> IO JSType

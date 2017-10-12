@@ -1,4 +1,4 @@
-module JSBoiler.Builtin where
+module JSBoiler.Eval.Operator where
 
 import Control.Monad (liftM2)
 import Data.IORef (readIORef)
@@ -6,6 +6,8 @@ import Text.Parsec (parse, eof)
 
 import JSBoiler.Parser (jsNumber)
 import JSBoiler.Type
+import JSBoiler.Eval.Property
+import JSBoiler.Eval.Function
 
 
 toPrimitive :: JSType -> IO JSType
@@ -71,7 +73,7 @@ applyNumeric f x y = do
 x >+ y = do
     px <- toPrimitive x
     py <- toPrimitive y
-    
+
     case px of
         JSString strx -> JSString <$> (strx ++) <$> stringValue py
         _ -> case py of
