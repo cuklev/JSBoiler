@@ -37,10 +37,10 @@ repl = do
 
 runFile :: String -> [String] -> IO ()
 runFile file args = do
+    code <- readFile file
     stack <- initStack
     -- do something with args
     -- maybe put them in something global
-    code <- readFile file
     case parseCode code of
         Left err -> print err
         Right statements -> void $ evalCode stack statements
