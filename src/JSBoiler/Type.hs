@@ -87,18 +87,38 @@ setBindingValue name value (s:ss) = do
                         return $ Just True
                     else return $ Just False
 
+getObjectRef :: JSType -> Maybe (IORef Object)
+getObjectRef (JSObject ref) = Just ref
+getObjectRef _              = Nothing
+
+isPrimitive :: JSType -> Bool
+isPrimitive (JSObject _) = False
+isPrimitive _            = True
+
 getProperty :: String -> Object -> Maybe Property
 getProperty name obj =
-            let own = M.lookup name $ properties obj
-            in case own of
-                Nothing -> prototype obj >>= getProperty name
-                _ -> own
+    let own = M.lookup name $ properties obj
+    in case own of
+        Nothing -> prototype obj >>= getProperty name
+        Just prop -> own
+
+getPropertyValue :: String -> IORef Object -> IO (Maybe JSType)
+getPropertyValue name ref = do
+    obj <- readIORef ref
+    let mprop = getProperty name obj
+        getValue prop = case get prop of
+            Nothing -> return $ value prop
+            Just func -> callFunction ref func []
+
+    maybe (return Nothing) (fmap Just . getValue) mprop
 
 setProperty :: String -> Property -> Object -> Object
 setProperty name prop obj =
-            let m = M.insert name prop $ properties obj
-            in obj { properties = m }
+    let m = M.insert name prop $ properties obj
+    in obj { properties = m }
 
+getBehaviour :: Object -> Maybe Function
+getBehaviour obj = maybe (prototype obj >>= getBehaviour) Just (behaviour obj)
 
 callFunction :: IORef Object -> Function -> [JSType] -> IO JSType
 callFunction obj func args = do

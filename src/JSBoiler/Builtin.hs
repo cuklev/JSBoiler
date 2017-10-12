@@ -7,7 +7,29 @@ import JSBoiler.Type
 
 
 toPrimitive :: JSType -> IO JSType
-toPrimitive (JSObject ref) = error "Not implemented"
+toPrimitive (JSObject ref) = do
+    mvalue <- tryCallAndGetPrimitive "valueOf" ref
+    case mvalue of
+        Nothing -> do
+            mstr <- tryCallAndGetPrimitive "toString" ref
+            return $ maybe (error "Cannot convert object to primitive value") id mstr
+        Just x -> return x
+
+    where
+        tryCallAndGetPrimitive name ref = do
+            mprop <- getPropertyValue name ref
+            case mprop of
+                Just (JSObject propRef) -> do
+                    obj <- readIORef propRef
+                    case getBehaviour obj of
+                        Nothing -> return Nothing
+                        Just func -> do
+                            result <- callFunction ref func []
+                            return $ if isPrimitive result
+                                then Just result
+                                else Nothing
+                _ -> return Nothing
+
 toPrimitive x = return x
 
 toObject :: JSType -> IO Object
@@ -21,7 +43,7 @@ stringValue (JSString x) = return x
 stringValue (JSBoolean x) = return $ if x then "true" else "false"
 stringValue JSUndefined = return "undefined"
 stringValue JSNull = return "null"
-stringValue (JSObject ref) = return "[object Object]" -- not always
+stringValue ref@(JSObject _) = toPrimitive ref >>= stringValue
 
 numericValue :: JSType -> IO Double
 numericValue (JSNumber x) = return x
@@ -31,7 +53,7 @@ numericValue (JSString x) = return $ case reads x of
 numericValue (JSBoolean x) = return $ if x then 1 else 0
 numericValue JSUndefined = return nAn
 numericValue JSNull = return 0
-numericValue (JSObject ref) = error "Not implemented"
+numericValue ref@(JSObject _) = toPrimitive ref >>= numericValue
 
 nAn :: Double
 nAn = 0 / 0
