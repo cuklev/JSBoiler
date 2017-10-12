@@ -2,7 +2,9 @@ module JSBoiler.Builtin where
 
 import Control.Monad (liftM2)
 import Data.IORef (readIORef)
+import Text.Parsec (parse, eof)
 
+import JSBoiler.Parser (jsNumber)
 import JSBoiler.Type
 
 
@@ -47,9 +49,11 @@ stringValue ref@(JSObject _) = toPrimitive ref >>= stringValue
 
 numericValue :: JSType -> IO Double
 numericValue (JSNumber x) = return x
-numericValue (JSString x) = return $ case reads x of
-    [(value, "")] -> value
-    _             -> nAn
+numericValue (JSString x) = if null x
+    then return 0
+    else case parse (jsNumber >>= \n -> eof >> return n) "" x of
+        Left _ -> return nAn
+        Right n -> return n
 numericValue (JSBoolean x) = return $ if x then 1 else 0
 numericValue JSUndefined = return nAn
 numericValue JSNull = return 0
