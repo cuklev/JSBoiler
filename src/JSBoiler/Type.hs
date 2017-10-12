@@ -33,10 +33,10 @@ data Property = Property { value :: JSType
                          , set :: Maybe Function
                          }
 
-data Function = Function { boundThis :: Maybe Object
+data Function = Function { boundThis :: Maybe (IORef Object)
                          , functionScope :: Stack
                          , argumentNames :: [String]
-                         , function :: [JSType] -> Stack -> IO JSType
+                         , function :: Stack -> IO JSType
                          }
 
 data Binding = Binding
@@ -98,3 +98,16 @@ setProperty :: String -> Property -> Object -> Object
 setProperty name prop obj =
             let m = M.insert name prop $ properties obj
             in obj { properties = m }
+
+
+callFunction :: IORef Object -> Function -> [JSType] -> IO JSType
+callFunction obj func args = do
+    let this = case boundThis func of
+                        Nothing -> obj
+                        Just x  -> x
+
+    newStack <- addScope (functionScope func) $ M.fromList
+            $ zipWith (\ident value -> (ident, Binding { boundValue = value, mutable = True })) (argumentNames func) args
+            ++ [("this", Binding { boundValue = this, mutable = False })]
+
+    function func newStack
