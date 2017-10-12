@@ -76,5 +76,5 @@ evalCode stack statements = last <$> mapM (evalStatement stack) statements
 
 initStack :: IO Stack
 initStack = addScope [] $ M.fromList
-    [
+    [ ("undefined", Binding { boundValue = JSUndefined, mutable = False })
     ]
