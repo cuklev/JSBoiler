@@ -25,12 +25,16 @@ stringValue (JSObject ref) = return "[object Object]" -- not always
 
 numericValue :: JSType -> IO Double
 numericValue (JSNumber x) = return x
-numericValue (JSString x) = error "Not implemented"
+numericValue (JSString x) = return $ case reads x of
+    [(value, "")] -> value
+    _             -> nAn
 numericValue (JSBoolean x) = return $ if x then 1 else 0
-numericValue JSUndefined = return $ nAn
-    where nAn = 0 / 0
+numericValue JSUndefined = return nAn
 numericValue JSNull = return 0
 numericValue (JSObject ref) = error "Not implemented"
+
+nAn :: Double
+nAn = 0 / 0
 
 applyNumeric f x y = do
     nx <- numericValue x
