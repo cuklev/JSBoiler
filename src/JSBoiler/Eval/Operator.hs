@@ -27,3 +27,14 @@ x >+ y = do
 x >- y = JSNumber <$> applyNumeric (-) x y
 x >* y = JSNumber <$> applyNumeric (*) x y
 x >/ y = JSNumber <$> applyNumeric (/) x y
+
+-- IO JSType for short circuit behaviour
+(>&&), (>||) :: IO JSType -> IO JSType -> IO JSType
+x >&& y = do
+    vx <- x
+    bx <- booleanValue vx
+    if bx then return vx else y
+x >|| y = do
+    vx <- x
+    bx <- booleanValue vx
+    if bx then y else return vx

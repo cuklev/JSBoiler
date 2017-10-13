@@ -61,6 +61,7 @@ expression = buildExpressionParser table term
         table = [ [Postfix chainPostfixOperations]
                 , [binaryOperator "*" (:*:) AssocLeft, binaryOperator "/" (:/:) AssocLeft]
                 , [binaryOperator "+" (:+:) AssocLeft, binaryOperator "-" (:-:) AssocLeft]
+                , [binaryOperator "&&" (:&&:) AssocLeft, binaryOperator "||" (:||:) AssocLeft]
                 , [binaryOperator "=" assign AssocRight, binaryOperator "+=" (assignModify (:+:)) AssocRight, binaryOperator "-=" (assignModify (:-:)) AssocRight, binaryOperator "*=" (assignModify (:*:)) AssocRight, binaryOperator "/=" (assignModify (:/:)) AssocRight]
                 ]
 

@@ -105,6 +105,14 @@ spec = do
             ++ putSpaces ["4", "+", "7", "*", "2"] `allShouldBe` (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
             ++ putSpaces ["(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
 
+        describe "logical" $ testMany expression $
+               putSpaces ["3", "&&", "7"] `allShouldBe` (LiteralNumber 3 :&&: LiteralNumber 7)
+            ++ putSpaces ["3", "||", "7"] `allShouldBe` (LiteralNumber 3 :||: LiteralNumber 7)
+            ++ putSpaces ["3", "&&", "5", "||", "7"] `allShouldBe` ((LiteralNumber 3 :&&: LiteralNumber 5) :||: LiteralNumber 7)
+
+            ++ putSpaces ["4", "+", "7", "*", "2"] `allShouldBe` (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
+            ++ putSpaces ["(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+
         describe "assignment" $ testMany expression $
                putSpaces ["x", "=", "4"] `allShouldBe` (LValueBinding "x" :=: LiteralNumber 4)
             ++ putSpaces ["x", "=", "4+7"] `allShouldBe` (LValueBinding "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))

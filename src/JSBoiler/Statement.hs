@@ -26,14 +26,21 @@ data Expression = LiteralNumber Double
                 | IndexOf Expression Expression -- Flipped
                 | FunctionCall [Expression] Expression-- Flipped
 
+                -- arithmetic operators
                 | Expression :+: Expression
                 | Expression :-: Expression
                 | Expression :*: Expression
                 | Expression :/: Expression
-                -- more operators
-                -- | PrefixPlus Expression -- +
-                -- | PrefixMinus Expression -- -
+                -- | PrefixPlus Expression
+                -- | PrefixMinus Expression
+
+                -- logical operators
+                | Expression :&&: Expression
+                | Expression :||: Expression
+
+                -- assignment
                 | LValue :=: Expression
+
                 -- | FunctionCall Expression [Expression] -- ()
                 -- | New Expression [Expression] -- new :(
                 deriving (Show, Eq)
