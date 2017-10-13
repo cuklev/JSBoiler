@@ -61,15 +61,13 @@ expression = buildExpressionParser table term
         table = [ [Postfix chainPostfixOperations]
                 , [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
                 , [binaryOperator '+' (:+:) AssocLeft, binaryOperator '-' (:-:) AssocLeft]
-                , [binaryOperator '=' (:=:) AssocRight] -- should check if left operand is assignable
+                , [binaryOperator '=' assign AssocRight]
                 ]
 
         binaryOperator x f = Infix (char x >> return f)
 
         propertyAccess = char '.' >> between spaces spaces identifier
-
         indexAccess = between (char '[') (char ']' >> spaces) expression
-
         functionCall = between (char '(' >> spaces) (char ')' >> spaces) (expression `sepBy` char ',')
 
         postfixOperations = fmap Property propertyAccess
@@ -79,6 +77,9 @@ expression = buildExpressionParser table term
         chainPostfixOperations = do
             ps <- many postfixOperations
             return $ \e -> foldl (\e p -> p e) e ps
+
+        assign (Identifier l) r = LValueBinding l :=: r
+        assign _              _ = error "Invalid left-hand assignment"
 
 
 declaration = DeclareBinding <$> between spaces spaces identifier

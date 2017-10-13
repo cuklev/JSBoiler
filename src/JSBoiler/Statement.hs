@@ -33,11 +33,15 @@ data Expression = LiteralNumber Double
                 -- more operators
                 -- | PrefixPlus Expression -- +
                 -- | PrefixMinus Expression -- -
-                | Expression :=: Expression
+                | LValue :=: Expression
                 -- | FunctionCall Expression [Expression] -- ()
                 -- | New Expression [Expression] -- new :(
                 deriving (Show, Eq)
 
 data Declaration = DeclareBinding String
-                 -- Extend to suppord destructuring
+                 -- Extend to support destructuring
                  deriving (Show, Eq)
+
+data LValue = LValueBinding String
+            -- Extend to support destructuring
+            deriving (Show, Eq)
