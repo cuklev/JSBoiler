@@ -22,9 +22,9 @@ data Expression = LiteralNumber Double
 
                 | Identifier String
 
-                | Property String Expression  -- Flipped
-                | Index Expression Expression -- Flipped
-                | FunctionCall [Expression] Expression
+                | PropertyOf String Expression  -- Flipped
+                | IndexOf Expression Expression -- Flipped
+                | FunctionCall [Expression] Expression-- Flipped
 
                 | Expression :+: Expression
                 | Expression :-: Expression
@@ -43,5 +43,7 @@ data Declaration = DeclareBinding String
                  deriving (Show, Eq)
 
 data LValue = LValueBinding String
+            | LValueProperty String Expression  -- Flipped
+            | LValueIndex Expression Expression -- Flipped
             -- Extend to support destructuring
             deriving (Show, Eq)

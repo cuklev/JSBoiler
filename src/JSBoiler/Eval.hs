@@ -9,6 +9,7 @@ import JSBoiler.Statement
 import JSBoiler.Type
 import JSBoiler.Eval.Binding
 import JSBoiler.Eval.Operator
+import JSBoiler.Eval.Property
 
 
 evalExpression :: Stack -> Expression -> IO JSType
@@ -34,14 +35,21 @@ evalExpression stack expr =
         x :/: y -> apply (>/) x y
 
         x :=: y -> do
-            vy <- eval y
+            val <- eval y
             case x of
-                LValueBinding nx -> do
-                    setBindingValue nx vy stack
-                    return vy
-                _                -> error "Not implemented"
+                LValueBinding name -> setBindingValue name val stack
+                LValueProperty name expr -> do
+                    ref <- toObjectRef <$> eval expr
+                    setPropertyValue name ref val
+                _  -> error "Not implemented"
+                LValueIndex iexpr expr -> do
+                    ref <- toObjectRef <$> eval expr
+                    name <- eval iexpr >>= stringValue
+                    setPropertyValue name ref val
+                _  -> error "Not implemented"
+            return val
 
-        _                -> error "Not implemented"
+        _ -> error "Not implemented"
 
 evalStatement :: Stack -> Statement -> IO (Maybe JSType)
 evalStatement stack statement = case statement of

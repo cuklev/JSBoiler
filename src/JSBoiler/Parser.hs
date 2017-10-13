@@ -70,8 +70,8 @@ expression = buildExpressionParser table term
         indexAccess = between (char '[') (char ']' >> spaces) expression
         functionCall = between (char '(' >> spaces) (char ')' >> spaces) (expression `sepBy` char ',')
 
-        postfixOperations = fmap Property propertyAccess
-                        <|> fmap Index indexAccess
+        postfixOperations = fmap PropertyOf propertyAccess
+                        <|> fmap IndexOf indexAccess
                         <|> fmap FunctionCall functionCall
 
         chainPostfixOperations = do
@@ -79,6 +79,8 @@ expression = buildExpressionParser table term
             return $ \e -> foldl (\e p -> p e) e ps
 
         assign (Identifier l) r = LValueBinding l :=: r
+        assign (PropertyOf prop expr) r = LValueProperty prop expr :=: r
+        assign (IndexOf iexpr expr) r = LValueIndex iexpr expr :=: r
         assign _              _ = error "Invalid left-hand assignment"
 
 

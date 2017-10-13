@@ -1,11 +1,18 @@
 module JSBoiler.Eval.Property where
 
+import Control.Monad (void)
 import Data.IORef
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type
 import JSBoiler.Eval.Function
+
+
+toObjectRef :: JSType -> IORef Object
+toObjectRef (JSObject ref) = ref
+toObjectRef _ = error "Not implemented"
+
 
 getProperty :: String -> Object -> Maybe Property
 getProperty name obj =
@@ -24,7 +31,35 @@ getPropertyValue name ref = do
 
     maybe (return Nothing) (fmap Just . getValue) mprop
 
+
 setProperty :: String -> Property -> Object -> Object
 setProperty name prop obj =
     let m = M.insert name prop $ properties obj
     in obj { properties = m }
+
+setPropertyValue :: String -> IORef Object -> JSType -> IO ()
+setPropertyValue name ref value = do
+    obj <- readIORef ref
+    let props = properties obj
+        mprop = M.lookup name props
+        setValue prop val = case set prop of
+            Nothing -> if writeable prop
+                            then let props' = M.insert name (prop { value = val }) props
+                                     obj' = obj { properties = props' }
+                                 in writeIORef ref obj'
+                            else error $ "Cannot assign to read only property '" ++ name ++ "'"
+            Just func -> void (callFunction ref func [val])
+
+    case mprop of
+        Nothing ->
+            let props' = M.insert name (Property
+                     { value = value
+                     , writeable = True
+                     , enumerable = True
+                     , configurable = True
+                     , get = Nothing
+                     , set = Nothing
+                     }) props
+                obj' = obj { properties = props' }
+            in writeIORef ref obj'
+        Just prop -> setValue prop value

@@ -36,10 +36,6 @@ toPrimitive (JSObject ref) = do
 
 toPrimitive x = return x
 
-toObject :: JSType -> IO Object
-toObject (JSObject ref) = readIORef ref
-toObject _ = error "Not implemented"
-
 
 stringValue :: JSType -> IO String
 stringValue (JSNumber x) = return $ show x
