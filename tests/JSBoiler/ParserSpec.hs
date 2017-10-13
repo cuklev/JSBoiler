@@ -14,6 +14,13 @@ testMany parser = mapM_ test
 
 allShouldBe strs expected = map (\x -> (x, expected)) strs
 
+putSpaces :: [String] -> [String]
+putSpaces [x] = [x]
+putSpaces (x:xs) = let rest = concat xs
+                   in map (x ++) (putSpaces xs)
+                   ++ [x ++ " " ++ rest]
+                   ++ [x ++ "  " ++ rest]
+
 testManyFail parser = mapM_ test
     where
         test str = it str $
@@ -88,45 +95,33 @@ spec = do
             ]
 
         describe "arithmetic" $ testMany expression $
-               allShouldBe ["3+7", "3 +7", "3+ 7", "3 + 7"] (LiteralNumber 3 :+: LiteralNumber 7)
-            ++ allShouldBe ["3-7", "3 -7", "3- 7", "3 - 7"] (LiteralNumber 3 :-: LiteralNumber 7)
-            ++ allShouldBe ["3*7", "3 *7", "3* 7", "3 * 7"] (LiteralNumber 3 :*: LiteralNumber 7)
-            ++ allShouldBe ["3/7", "3 /7", "3/ 7", "3 / 7"] (LiteralNumber 3 :/: LiteralNumber 7)
+               putSpaces ["3", "+", "7"] `allShouldBe` (LiteralNumber 3 :+: LiteralNumber 7)
+            ++ putSpaces ["3", "-", "7"] `allShouldBe` (LiteralNumber 3 :-: LiteralNumber 7)
+            ++ putSpaces ["3", "*", "7"] `allShouldBe` (LiteralNumber 3 :*: LiteralNumber 7)
+            ++ putSpaces ["3", "/", "7"] `allShouldBe` (LiteralNumber 3 :/: LiteralNumber 7)
 
-            ++ allShouldBe ["4+7*2", "4 +7*2", "4+ 7*2", "4+7 *2", "4+7* 2"] (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
-            ++ allShouldBe ["(4+7)*2", "( 4+7)*2", "(4 +7)*2", "(4+ 7)*2", "(4+7 )*2", "(4+7) *2", "(4+7)* 2"] ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
+            ++ putSpaces ["4", "+", "7", "*", "2"] `allShouldBe` (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
+            ++ putSpaces ["(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
 
         describe "other" $ testMany expression $
-               allShouldBe ["x.y+3", "x .y+3", "x. y+3", "x.y +3", "x.y+ 3"] (("y" `Property` Identifier "x") :+: LiteralNumber 3)
-            ++ allShouldBe ["x['y']+3", "x ['y']+3", "x[ 'y']+3", "x['y' ]+3", "x['y'] +3", "x['y']+ 3"] ((LiteralString "y" `Index` Identifier "x") :+: LiteralNumber 3)
-            ++ allShouldBe ["x()+3", "x ()+3", "x( )+3", "x() +3", "x()+ 3"] (([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
+               putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` (("y" `Property` Identifier "x") :+: LiteralNumber 3)
+            ++ putSpaces ["x", "[", "'y'", "]", "+", "3"] `allShouldBe` ((LiteralString "y" `Index` Identifier "x") :+: LiteralNumber 3)
+            ++ putSpaces ["x", "(", ")", "+", "3"] `allShouldBe` (([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
 
     describe "postfix operations" $ do
-        describe "property access" $ testMany expression
-            [ ("'str'.p1",       "p1" `Property` LiteralString "str")
-            , ("'str'.p1.p2",    "p2" `Property` ("p1" `Property` LiteralString "str"))
-            , ("'str' .p1",      "p1" `Property` LiteralString "str")
-            , ("'str'. p1",      "p1" `Property` LiteralString "str")
-            ]
+        describe "property access" $ testMany expression $
+               putSpaces ["'str'", ".", "p1"] `allShouldBe` ("p1" `Property` LiteralString "str")
+            ++ putSpaces ["'str'", ".", "p1", ".", "p2"] `allShouldBe` ("p2" `Property` ("p1" `Property` LiteralString "str"))
 
-        describe "indexing" $ testMany expression
-            [ ("'str'['p1']",       LiteralString "p1" `Index` LiteralString "str")
-            , ("'str'['p1']['p2']", LiteralString "p2" `Index` (LiteralString "p1" `Index` LiteralString "str"))
-            , ("'str' ['p1']",      LiteralString "p1" `Index` LiteralString "str")
-            , ("'str'[ 'p1']",      LiteralString "p1" `Index` LiteralString "str")
-            , ("'str'['p1' ]",      LiteralString "p1" `Index` LiteralString "str")
-            ]
+        describe "indexing" $ testMany expression $
+               putSpaces ["'str'", "[", "'p1'", "]"] `allShouldBe` (LiteralString "p1" `Index` LiteralString "str")
+            ++ putSpaces ["'str'", "[", "'p1'", "]", "[", "'p2'", "]"] `allShouldBe` (LiteralString "p2" `Index` (LiteralString "p1" `Index` LiteralString "str"))
 
-        describe "function call" $ testMany expression
-            [ ("x()", [] `FunctionCall` Identifier "x")
-            , ("x(3)", [LiteralNumber 3] `FunctionCall` Identifier "x")
-            , ("x(3, 4)", [LiteralNumber 3, LiteralNumber 4] `FunctionCall` Identifier "x")
-            , ("x(3)(4)", [LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
-            , ("x ()", [] `FunctionCall` Identifier "x")
-            , ("x( )", [] `FunctionCall` Identifier "x")
-            , ("x( 3)", [LiteralNumber 3] `FunctionCall` Identifier "x")
-            , ("x(3 )", [LiteralNumber 3] `FunctionCall` Identifier "x")
-            ]
+        describe "function call" $ testMany expression $
+               putSpaces ["x", "(", ")"] `allShouldBe` ([] `FunctionCall` Identifier "x")
+            ++ putSpaces ["x", "(", "3", ")"] `allShouldBe` ([LiteralNumber 3] `FunctionCall` Identifier "x")
+            ++ putSpaces ["x", "(", "3", ",", "4", ")"] `allShouldBe` ([LiteralNumber 3, LiteralNumber 4] `FunctionCall` Identifier "x")
+            ++ putSpaces ["x", "(", "3", ")", "(", "4", ")"] `allShouldBe` ([LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
 
         describe "mixed" $ testMany expression
             [ ("x.y['z']", LiteralString "z" `Index` ("y" `Property` Identifier "x"))
@@ -140,15 +135,13 @@ spec = do
 
     describe "declarations" $ do
         describe "let declarations" $ do
-            describe "valid" $ testMany letDeclaration
-                [ ("let x = 42",          LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 42))])
-                , ("let y = 11",          LetDeclaration [(DeclareBinding "y", Just (LiteralNumber 11))])
-                , ("let a = 1, b = 2",    LetDeclaration [(DeclareBinding "a", Just (LiteralNumber 1)), (DeclareBinding "b", Just (LiteralNumber 2))])
-                , ("let x",               LetDeclaration [(DeclareBinding "x", Nothing)])
-                , ("let x = 3 + 7",       LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7))])
-                , ("let x = 3 + 7, y",    LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7)), (DeclareBinding "y", Nothing)])
-                , ("let x = (4 + 7) * 2", LetDeclaration [(DeclareBinding "x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))])
-                ]
+            describe "valid" $ testMany letDeclaration $
+                   putSpaces ["let ", "x", "=", "42"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 42))]
+                ++ putSpaces ["let ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "a", Just (LiteralNumber 1)), (DeclareBinding "b", Just (LiteralNumber 2))]
+                ++ putSpaces ["let ", "x"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Nothing)]
+                ++ putSpaces ["let ", "x", "=", "3", "+", "7"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7))]
+                ++ putSpaces ["let ", "x", "=", "3", "+", "7", ",", "y"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7)), (DeclareBinding "y", Nothing)]
+                ++ putSpaces ["let ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))]
 
             describe "invalid" $ testManyFail constDeclaration
                 [ "let 2 = x"
@@ -157,13 +150,12 @@ spec = do
                 ]
 
         describe "const declarations" $ do
-            describe "valid" $ testMany constDeclaration
-                [ ("const x = 42",          ConstDeclaration [(DeclareBinding "x", LiteralNumber 42)])
-                , ("const y = 11",          ConstDeclaration [(DeclareBinding "y", LiteralNumber 11)])
-                , ("const a = 1, b = 2",    ConstDeclaration [(DeclareBinding "a", LiteralNumber 1), (DeclareBinding "b", LiteralNumber 2)])
-                , ("const x = 3 + 7",       ConstDeclaration [(DeclareBinding "x", LiteralNumber 3 :+: LiteralNumber 7)])
-                , ("const x = (4 + 7) * 2", ConstDeclaration [(DeclareBinding "x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)])
-                ]
+            describe "valid" $ testMany constDeclaration $
+                   putSpaces ["const ", "x", "=", "42"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 42)]
+                ++ putSpaces ["const ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "a", LiteralNumber 1), (DeclareBinding "b", LiteralNumber 2)]
+                ++ putSpaces ["const ", "x", "=", "3", "+", "7"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 3 :+: LiteralNumber 7)]
+                ++ putSpaces ["const ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)]
+
             describe "invalid" $ testManyFail constDeclaration
                 [ "const x"
                 , "const x, y"
