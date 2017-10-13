@@ -28,10 +28,18 @@ evalExpression stack expr =
         Identifier x     -> getBindingValue x stack
                                 >>= maybe (error $ x ++ " is not defined") return
 
-        x :+: y          -> apply (>+) x y
-        x :-: y          -> apply (>-) x y
-        x :*: y          -> apply (>*) x y
-        x :/: y          -> apply (>/) x y
+        x :+: y -> apply (>+) x y
+        x :-: y -> apply (>-) x y
+        x :*: y -> apply (>*) x y
+        x :/: y -> apply (>/) x y
+
+        x :=: y -> do
+            vy <- eval y
+            case x of
+                LValueBinding nx -> do
+                    setBindingValue nx vy stack
+                    return vy
+                _                -> error "Not implemented"
 
         _                -> error "Not implemented"
 

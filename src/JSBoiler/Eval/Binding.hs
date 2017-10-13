@@ -36,8 +36,8 @@ getBindingValue name (s:ss) = do
         _ -> return $ fmap boundValue local
 
 
-setBindingValue :: String -> JSType -> Stack -> IO (Maybe Bool)
-setBindingValue _ _ [] = return Nothing
+setBindingValue :: String -> JSType -> Stack -> IO ()
+setBindingValue name _ [] = error $ name ++ " is not defined"
 setBindingValue name value (s:ss) = do
     scope <- readIORef s
     case M.lookup name scope of
@@ -47,5 +47,4 @@ setBindingValue name value (s:ss) = do
                         let b' = b { boundValue = value }
                             scope' = M.insert name b' scope
                         writeIORef s scope'
-                        return $ Just True
-                    else return $ Just False
+                    else error $ "Cannot assign to constant variable " ++ name
