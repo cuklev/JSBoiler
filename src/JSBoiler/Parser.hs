@@ -59,12 +59,12 @@ expression = buildExpressionParser table term
            <|> fmap Identifier identifier
 
         table = [ [Postfix chainPostfixOperations]
-                , [binaryOperator '*' (:*:) AssocLeft, binaryOperator '/' (:/:) AssocLeft]
-                , [binaryOperator '+' (:+:) AssocLeft, binaryOperator '-' (:-:) AssocLeft]
-                , [binaryOperator '=' assign AssocRight]
+                , [binaryOperator "*" (:*:) AssocLeft, binaryOperator "/" (:/:) AssocLeft]
+                , [binaryOperator "+" (:+:) AssocLeft, binaryOperator "-" (:-:) AssocLeft]
+                , [binaryOperator "=" assign AssocRight, binaryOperator "+=" (assignModify (:+:)) AssocRight, binaryOperator "-=" (assignModify (:-:)) AssocRight, binaryOperator "*=" (assignModify (:*:)) AssocRight, binaryOperator "/=" (assignModify (:/:)) AssocRight]
                 ]
 
-        binaryOperator x f = Infix (char x >> return f)
+        binaryOperator x f = Infix (string x >> return f)
 
         propertyAccess = char '.' >> between spaces spaces identifier
         indexAccess = between (char '[') (char ']' >> spaces) expression
@@ -82,6 +82,8 @@ expression = buildExpressionParser table term
         assign (PropertyOf prop expr) r = LValueProperty prop expr :=: r
         assign (IndexOf iexpr expr) r = LValueIndex iexpr expr :=: r
         assign _              _ = error "Invalid left-hand assignment"
+
+        assignModify f l r = assign l $ f l r
 
 
 declaration = DeclareBinding <$> between spaces spaces identifier
