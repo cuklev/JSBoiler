@@ -42,9 +42,9 @@ jsNull = string "null" >> notFollowedBy identifierSymbol
 jsBoolean = (string "false" >> notFollowedBy identifierSymbol >> return False)
         <|> (string "true" >> notFollowedBy identifierSymbol >> return True)
 
-identifierSymbol = letter <|> digit <|> char '_'
+identifierSymbol = letter <|> digit <|> char '_' <|> char '$'
 identifier = do
-    let first = letter <|> char '_'
+    let first = letter <|> char '_' <|> char '$'
     liftM2 (:) first (many identifierSymbol)
 
 expression :: Parsec String () Expression

@@ -32,7 +32,9 @@ spec = do
     describe "identifiers" $ do
         describe "valid" $ testMany identifier
             $ map (\x -> (x, x))
-                [ "x", "l2", "Abc", "__proto__", "OhoB0_hoU"
+                [ "x", "l2", "Abc"
+                , "__proto__", "OhoB0_hoU"
+                , "$", "$this", "many$"
                 ]
 
         describe "invalid" $ testManyFail identifier
