@@ -47,14 +47,14 @@ setPropertyValue name ref value = do
 
     case mprop of
         Nothing ->
-            let props' = M.insert name (Property
+            let props' = M.insert name Property
                      { value = value
                      , writeable = True
                      , enumerable = True
                      , configurable = True
                      , get = Nothing
                      , set = Nothing
-                     }) props
+                     } props
                 obj' = obj { properties = props' }
             in writeIORef ref obj'
         Just prop -> setValue prop value

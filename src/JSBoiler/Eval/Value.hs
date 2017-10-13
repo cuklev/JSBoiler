@@ -1,5 +1,6 @@
 module JSBoiler.Eval.Value where
 
+import Data.Maybe (fromMaybe)
 import Data.IORef
 import Text.Parsec (parse, eof)
 
@@ -19,7 +20,7 @@ toPrimitive (JSObject ref) = do
     case mvalue of
         Nothing -> do
             mstr <- tryCallAndGetPrimitive "toString" ref
-            return $ maybe (error "Cannot convert object to primitive value") id mstr
+            return $ fromMaybe (error "Cannot convert object to primitive value") mstr
         Just x -> return x
 
     where

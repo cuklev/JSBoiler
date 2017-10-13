@@ -1,5 +1,7 @@
 module JSBoiler.Eval.Function where
 
+import Control.Applicative ((<|>))
+import Data.Maybe (fromMaybe)
 import Data.IORef
 import qualified Data.Map.Strict as M
 
@@ -9,13 +11,11 @@ import JSBoiler.Eval.Binding
 
 
 getBehaviour :: Object -> Maybe Function
-getBehaviour obj = maybe (prototype obj >>= getBehaviour) Just (behaviour obj)
+getBehaviour obj = behaviour obj <|> (prototype obj >>= getBehaviour)
 
 callFunction :: IORef Object -> Function -> [JSType] -> IO JSType
 callFunction obj func args = do
-    let this = case boundThis func of
-                        Nothing -> obj
-                        Just x  -> x
+    let this = fromMaybe obj (boundThis func)
 
     newStack <- addScope (functionScope func) $ M.fromList
             $ zipWith (\ident value -> (ident, Binding { boundValue = value, mutable = True })) (argumentNames func) args

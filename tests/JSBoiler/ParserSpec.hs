@@ -18,8 +18,8 @@ putSpaces :: [String] -> [String]
 putSpaces [x] = [x]
 putSpaces (x:xs) = let rest = concat xs
                    in map (x ++) (putSpaces xs)
-                   ++ [x ++ " " ++ rest]
-                   ++ [x ++ "  " ++ rest]
+                       ++ [x ++ " " ++ rest]
+                       ++ [x ++ "  " ++ rest]
 
 testManyFail parser = mapM_ test
     where
