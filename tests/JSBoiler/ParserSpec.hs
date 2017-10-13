@@ -112,6 +112,10 @@ spec = do
             ++ putSpaces ["x.y", "=", "4+7"] `allShouldBe` ("y" `LValueProperty` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
             ++ putSpaces ["x[2]", "=", "4"] `allShouldBe` (LiteralNumber 2 `LValueIndex` Identifier "x" :=: LiteralNumber 4)
             ++ putSpaces ["x[2]", "=", "4+7"] `allShouldBe` (LiteralNumber 2 `LValueIndex` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
+            ++ putSpaces ["x", "+=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :+: LiteralNumber 4))
+            ++ putSpaces ["x", "-=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :-: LiteralNumber 4))
+            ++ putSpaces ["x", "*=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :*: LiteralNumber 4))
+            ++ putSpaces ["x", "/=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :/: LiteralNumber 4))
 
         describe "other" $ testMany expression $
                putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` (("y" `PropertyOf` Identifier "x") :+: LiteralNumber 3)

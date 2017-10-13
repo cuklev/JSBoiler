@@ -64,7 +64,10 @@ expression = buildExpressionParser table term
                 , [binaryOperator "=" assign AssocRight, binaryOperator "+=" (assignModify (:+:)) AssocRight, binaryOperator "-=" (assignModify (:-:)) AssocRight, binaryOperator "*=" (assignModify (:*:)) AssocRight, binaryOperator "/=" (assignModify (:/:)) AssocRight]
                 ]
 
-        binaryOperator x f = Infix (string x >> return f)
+        binaryOperator x f = Infix $ try $ do
+            string x
+            notFollowedBy (char '=')
+            return f
 
         propertyAccess = char '.' >> between spaces spaces identifier
         indexAccess = between (char '[') (char ']' >> spaces) expression
