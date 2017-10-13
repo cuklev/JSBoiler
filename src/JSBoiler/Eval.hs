@@ -62,7 +62,7 @@ evalStatement stack statement = case statement of
             case checkForAlreadyDeclared scope decl of
                 Nothing -> evalExpression stack expr
                             >>= declare scopeRef False decl
-                Just name -> error $ "Identifier '" ++ show name ++ "' has already been declared"
+                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
         return Nothing
 
     LetDeclaration declarations -> do
@@ -72,7 +72,7 @@ evalStatement stack statement = case statement of
             case checkForAlreadyDeclared scope decl of
                 Nothing -> maybe (return JSUndefined) (evalExpression stack) mexpr
                             >>= declare scopeRef True decl
-                Just name -> error $ "Identifier '" ++ show name ++ "' has already been declared"
+                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
         return Nothing
 
     _            -> error "Not implemented"
