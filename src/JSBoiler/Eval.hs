@@ -43,6 +43,7 @@ evalExpression stack expr =
         x :-: y -> apply (>-) x y
         x :*: y -> apply (>*) x y
         x :/: y -> apply (>/) x y
+        x :%: y -> apply (>%) x y
 
         x :=: y -> do
             value <- eval y

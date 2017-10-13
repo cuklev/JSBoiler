@@ -31,6 +31,7 @@ data Expression = LiteralNumber Double
                 | Expression :-: Expression
                 | Expression :*: Expression
                 | Expression :/: Expression
+                | Expression :%: Expression
                 -- | PrefixPlus Expression
                 -- | PrefixMinus Expression
 
