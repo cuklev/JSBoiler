@@ -10,6 +10,7 @@ import JSBoiler.Type
 import JSBoiler.Eval.Binding
 import JSBoiler.Eval.Operator
 import JSBoiler.Eval.Property
+import JSBoiler.Eval.Value
 
 
 evalExpression :: Stack -> Expression -> IO JSType
@@ -19,6 +20,15 @@ evalExpression stack expr =
             vx <- eval x
             vy <- eval y
             f vx vy
+        assignTo value (LValueBinding name) = setBindingValue name value stack
+        assignTo value (LValueProperty name expr) = do
+                            ref <- toObjectRef <$> eval expr
+                            setPropertyValue name ref value
+        assignTo value (LValueIndex iexpr expr) = do
+                            ref <- toObjectRef <$> eval expr
+                            name <- eval iexpr >>= stringValue
+                            setPropertyValue name ref value
+        assignTo _ _ = error "Not implemented"
 
     in case expr of
         LiteralNumber x  -> return $ JSNumber x
@@ -35,19 +45,9 @@ evalExpression stack expr =
         x :/: y -> apply (>/) x y
 
         x :=: y -> do
-            val <- eval y
-            case x of
-                LValueBinding name -> setBindingValue name val stack
-                LValueProperty name expr -> do
-                    ref <- toObjectRef <$> eval expr
-                    setPropertyValue name ref val
-                _  -> error "Not implemented"
-                LValueIndex iexpr expr -> do
-                    ref <- toObjectRef <$> eval expr
-                    name <- eval iexpr >>= stringValue
-                    setPropertyValue name ref val
-                _  -> error "Not implemented"
-            return val
+            value <- eval y
+            value `assignTo` x
+            return value
 
         _ -> error "Not implemented"
 

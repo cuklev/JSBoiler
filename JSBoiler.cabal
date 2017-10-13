@@ -35,6 +35,7 @@ library
                        JSBoiler.Eval.Function
                        JSBoiler.Eval.Operator
                        JSBoiler.Eval.Property
+                       JSBoiler.Eval.Value
   -- other-extensions:
   build-depends:       base >=4.9 && <4.10
                      , containers >=0.5 && <0.6

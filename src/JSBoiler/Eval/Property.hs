@@ -9,11 +9,6 @@ import JSBoiler.Type
 import JSBoiler.Eval.Function
 
 
-toObjectRef :: JSType -> IORef Object
-toObjectRef (JSObject ref) = ref
-toObjectRef _ = error "Not implemented"
-
-
 getProperty :: String -> Object -> Maybe Property
 getProperty name obj =
     let own = M.lookup name $ properties obj
