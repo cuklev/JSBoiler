@@ -28,7 +28,7 @@ x >- y = JSNumber <$> applyNumeric (-) x y
 x >* y = JSNumber <$> applyNumeric (*) x y
 x >/ y = JSNumber <$> applyNumeric (/) x y
 -- % with floating point numbers is nasty
-x >% y = JSNumber <$> applyNumeric (\nx ny -> nx - ny * fromIntegral $ floor $ nx / ny) x y
+x >% y = JSNumber <$> applyNumeric (\nx ny -> nx - ny * fromIntegral (floor $ nx / ny)) x y
 
 -- IO JSType for short circuit behaviour
 (>&&), (>||) :: IO JSType -> IO JSType -> IO JSType
