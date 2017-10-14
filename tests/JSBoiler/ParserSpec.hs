@@ -125,10 +125,10 @@ spec = do
         describe "assignment" $ testMany expression $
                putSpaces ["x", "=", "4"] `allShouldBe` (LValueBinding "x" :=: LiteralNumber 4)
             ++ putSpaces ["x", "=", "4+7"] `allShouldBe` (LValueBinding "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
-            ++ putSpaces ["x.y", "=", "4"] `allShouldBe` ("y" `LValueProperty` Identifier "x" :=: LiteralNumber 4)
-            ++ putSpaces ["x.y", "=", "4+7"] `allShouldBe` ("y" `LValueProperty` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
-            ++ putSpaces ["x[2]", "=", "4"] `allShouldBe` (LiteralNumber 2 `LValueIndex` Identifier "x" :=: LiteralNumber 4)
-            ++ putSpaces ["x[2]", "=", "4+7"] `allShouldBe` (LiteralNumber 2 `LValueIndex` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
+            ++ putSpaces ["x.y", "=", "4"] `allShouldBe` (IdentifierKey "y" `LValueProperty` Identifier "x" :=: LiteralNumber 4)
+            ++ putSpaces ["x.y", "=", "4+7"] `allShouldBe` (IdentifierKey "y" `LValueProperty` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
+            ++ putSpaces ["x[2]", "=", "4"] `allShouldBe` (ExpressionKey (LiteralNumber 2) `LValueProperty` Identifier "x" :=: LiteralNumber 4)
+            ++ putSpaces ["x[2]", "=", "4+7"] `allShouldBe` (ExpressionKey (LiteralNumber 2) `LValueProperty` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
             ++ putSpaces ["x", "+=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :+: LiteralNumber 4))
             ++ putSpaces ["x", "-=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :-: LiteralNumber 4))
             ++ putSpaces ["x", "*=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :*: LiteralNumber 4))
@@ -136,18 +136,18 @@ spec = do
             ++ putSpaces ["x", "%=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :%: LiteralNumber 4))
 
         describe "other" $ testMany expression $
-               putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` (("y" `PropertyOf` Identifier "x") :+: LiteralNumber 3)
-            ++ putSpaces ["x", "[", "'y'", "]", "+", "3"] `allShouldBe` ((LiteralString "y" `IndexOf` Identifier "x") :+: LiteralNumber 3)
+               putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` ((IdentifierKey "y" `PropertyOf` Identifier "x") :+: LiteralNumber 3)
+            ++ putSpaces ["x", "[", "'y'", "]", "+", "3"] `allShouldBe` ((ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x") :+: LiteralNumber 3)
             ++ putSpaces ["x", "(", ")", "+", "3"] `allShouldBe` (([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
 
     describe "postfix operations" $ do
         describe "property access" $ testMany expression $
-               putSpaces ["'str'", ".", "p1"] `allShouldBe` ("p1" `PropertyOf` LiteralString "str")
-            ++ putSpaces ["'str'", ".", "p1", ".", "p2"] `allShouldBe` ("p2" `PropertyOf` ("p1" `PropertyOf` LiteralString "str"))
+               putSpaces ["'str'", ".", "p1"] `allShouldBe` (IdentifierKey "p1" `PropertyOf` LiteralString "str")
+            ++ putSpaces ["'str'", ".", "p1", ".", "p2"] `allShouldBe` (IdentifierKey "p2" `PropertyOf` (IdentifierKey "p1" `PropertyOf` LiteralString "str"))
 
         describe "indexing" $ testMany expression $
-               putSpaces ["'str'", "[", "'p1'", "]"] `allShouldBe` (LiteralString "p1" `IndexOf` LiteralString "str")
-            ++ putSpaces ["'str'", "[", "'p1'", "]", "[", "'p2'", "]"] `allShouldBe` (LiteralString "p2" `IndexOf` (LiteralString "p1" `IndexOf` LiteralString "str"))
+               putSpaces ["'str'", "[", "'p1'", "]"] `allShouldBe` (ExpressionKey (LiteralString "p1") `PropertyOf` LiteralString "str")
+            ++ putSpaces ["'str'", "[", "'p1'", "]", "[", "'p2'", "]"] `allShouldBe` (ExpressionKey (LiteralString "p2") `PropertyOf` (ExpressionKey (LiteralString "p1") `PropertyOf` LiteralString "str"))
 
         describe "function call" $ testMany expression $
                putSpaces ["x", "(", ")"] `allShouldBe` ([] `FunctionCall` Identifier "x")
@@ -156,13 +156,13 @@ spec = do
             ++ putSpaces ["x", "(", "3", ")", "(", "4", ")"] `allShouldBe` ([LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
 
         describe "mixed" $ testMany expression
-            [ ("x.y['z']", LiteralString "z" `IndexOf` ("y" `PropertyOf` Identifier "x"))
-            , ("x['y'].z", "z" `PropertyOf` (LiteralString "y" `IndexOf` Identifier "x"))
-            , ("x.y('z')", [LiteralString "z"] `FunctionCall` ("y" `PropertyOf` Identifier "x"))
-            , ("x['y']('z')", [LiteralString "z"] `FunctionCall` (LiteralString "y" `IndexOf` Identifier "x"))
-            , ("x('y').z", "z" `PropertyOf` ([LiteralString "y"] `FunctionCall` Identifier "x"))
-            , ("x('y')['z']", LiteralString "z" `IndexOf` ([LiteralString "y"] `FunctionCall` Identifier "x"))
-            , ("x.y['z'](0)", [LiteralNumber 0] `FunctionCall` (LiteralString "z" `IndexOf` ("y" `PropertyOf` Identifier "x")))
+            [ ("x.y['z']", ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x"))
+            , ("x['y'].z", IdentifierKey "z" `PropertyOf` (ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x"))
+            , ("x.y('z')", [LiteralString "z"] `FunctionCall` (IdentifierKey "y" `PropertyOf` Identifier "x"))
+            , ("x['y']('z')", [LiteralString "z"] `FunctionCall` (ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x"))
+            , ("x('y').z", IdentifierKey "z" `PropertyOf` ([LiteralString "y"] `FunctionCall` Identifier "x"))
+            , ("x('y')['z']", ExpressionKey (LiteralString "z") `PropertyOf` ([LiteralString "y"] `FunctionCall` Identifier "x"))
+            , ("x.y['z'](0)", [LiteralNumber 0] `FunctionCall` (ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x")))
             ]
 
     describe "declarations" $ do

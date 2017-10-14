@@ -59,6 +59,7 @@ setPropertyValue name ref value = do
             in writeIORef ref obj'
         Just prop -> setValue prop value
 
+
 makeObject :: [(String, JSType)] -> IO JSType
 makeObject pairs =
     let props = map toProperty pairs

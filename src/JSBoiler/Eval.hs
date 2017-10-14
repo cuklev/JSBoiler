@@ -21,37 +21,28 @@ evalExpression stack expr =
             vy <- eval y
             f vx vy
         assignTo value (LValueBinding name) = setBindingValue name value stack
-        assignTo value (LValueProperty name expr) = do
+        assignTo value (LValueProperty key expr) = do
+                            name <- getKeyName key
                             ref <- toObjectRef <$> eval expr
-                            setPropertyValue name ref value
-        assignTo value (LValueIndex iexpr expr) = do
-                            ref <- toObjectRef <$> eval expr
-                            name <- eval iexpr >>= stringValue
                             setPropertyValue name ref value
         assignTo _ _ = error "Not implemented"
+
+        getKeyName (IdentifierKey x) = return x
+        getKeyName (ExpressionKey x) = eval x >>= stringValue
 
     in case expr of
         LiteralNumber x  -> return $ JSNumber x
         LiteralString x  -> return $ JSString x
         LiteralBoolean x -> return $ JSBoolean x
         LiteralNull      -> return JSNull
-        LiteralObject x  -> let getKey x = case x of
-                                    IdentifierKey x -> return x
-                                    ExpressionKey x -> eval x >>= stringValue
-                            in mapM (\(k, v) -> liftM2 (,) (getKey k) (eval v)) x
+        LiteralObject x  -> mapM (\(k, v) -> liftM2 (,) (getKeyName k) (eval v)) x
                                 >>= makeObject
-
         Identifier x     -> getBindingValue x stack
                                 >>= maybe (error $ x ++ " is not defined") return
 
-        name `PropertyOf` x -> do
+        key `PropertyOf` x -> do
+            name <- getKeyName key
             vx <- eval x
-            let ref = toObjectRef vx
-            fromMaybe JSUndefined <$> getPropertyValue name ref
-        expr `IndexOf` x    -> do
-            vx <- eval x
-            index <- eval expr
-            name <- stringValue index
             let ref = toObjectRef vx
             fromMaybe JSUndefined <$> getPropertyValue name ref
 
