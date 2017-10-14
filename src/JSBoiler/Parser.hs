@@ -164,6 +164,7 @@ blockScope = do
     char '{'
     statements <- many (fmap fst statement)
     char '}'
+    spaces
     return (BlockScope statements, True)
 
 ifStatement = do
@@ -173,7 +174,7 @@ ifStatement = do
     cond <- fmap fst expression
     char ')'
     (thenW, nl0) <- statement
-    melse <- optionMaybe (string "else" >> statement) -- there is a BUG in else parsing
+    melse <- optionMaybe (string "else" >> notFollowedBy identifierSymbol >> statement)
     let (elseW, nl) = case melse of
             Nothing -> (Nothing, nl0)
             Just (elseW, nl) -> (Just elseW, nl)

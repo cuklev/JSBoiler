@@ -205,7 +205,7 @@ spec = do
     describe "if statement" $ testMany (fmap fst statement) $
            putSpaces ["if", "(", "null", ")", "x = 5"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Nothing }
         ++ putSpaces ["if", "(", "null", ")", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Nothing }
-        ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
-        ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
+        ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
+        ++ putSpaces ["if", "(", "null", ")", "{", "}", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
         ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (BlockScope []) }
         ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (BlockScope []) }
