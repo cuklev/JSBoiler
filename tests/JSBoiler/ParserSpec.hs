@@ -75,7 +75,7 @@ spec = do
             ]
 
     describe "expressions" $ do
-        describe "identifiers" $ testMany expression
+        describe "identifiers" $ testMany (fmap fst expression)
             $ map (\x -> (x, Identifier x))
                 [ "x", "l2", "Abc", "__proto__", "OhoB0_hoU"
                 , "le", "letx", "cons", "constx", "functio", "functionx"
@@ -83,20 +83,20 @@ spec = do
                 , "clas", "classx"
                 ]
 
-        describe "numbers" $ testMany expression
+        describe "numbers" $ testMany (fmap fst expression)
             [ ("4",               LiteralNumber 4)
             , ("42",              LiteralNumber 42)
             , ("1.3",             LiteralNumber 1.3)
             , ("1e10",            LiteralNumber 1e10)
             ]
 
-        describe "strings" $ testMany expression
+        describe "strings" $ testMany (fmap fst expression)
             [ ("'string'",        LiteralString "string")
             , ("\"string\"",      LiteralString "string")
             , ("'line1\\nline2'", LiteralString "line1\nline2")
             ]
 
-        describe "objects" $ testMany expression $
+        describe "objects" $ testMany (fmap fst expression) $
                putSpaces ["{", "}"] `allShouldBe` (LiteralObject [])
             ++ putSpaces ["{", "x", ":", "3", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", LiteralNumber 3)])
             ++ putSpaces ["{", "x", ":", "3", ",", "y", ":", "7", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", LiteralNumber 3), (IdentifierKey "y", LiteralNumber 7)])
@@ -104,7 +104,7 @@ spec = do
             ++ putSpaces ["{", "x", ",", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", Identifier "x")])
             ++ putSpaces ["{", "[3 + 5]", ":", "1", "}"] `allShouldBe` (LiteralObject [(ExpressionKey (LiteralNumber 3 :+: LiteralNumber 5), LiteralNumber 1)])
 
-        describe "arithmetic" $ testMany expression $
+        describe "arithmetic" $ testMany (fmap fst expression) $
                putSpaces ["3", "+", "7"] `allShouldBe` (LiteralNumber 3 :+: LiteralNumber 7)
             ++ putSpaces ["3", "-", "7"] `allShouldBe` (LiteralNumber 3 :-: LiteralNumber 7)
             ++ putSpaces ["3", "*", "7"] `allShouldBe` (LiteralNumber 3 :*: LiteralNumber 7)
@@ -114,7 +114,7 @@ spec = do
             ++ putSpaces ["4", "+", "7", "*", "2"] `allShouldBe` (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
             ++ putSpaces ["(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
 
-        describe "logical" $ testMany expression $
+        describe "logical" $ testMany (fmap fst expression) $
                putSpaces ["3", "&&", "7"] `allShouldBe` (LiteralNumber 3 :&&: LiteralNumber 7)
             ++ putSpaces ["3", "||", "7"] `allShouldBe` (LiteralNumber 3 :||: LiteralNumber 7)
             ++ putSpaces ["3", "&&", "5", "||", "7"] `allShouldBe` ((LiteralNumber 3 :&&: LiteralNumber 5) :||: LiteralNumber 7)
@@ -122,7 +122,7 @@ spec = do
             ++ putSpaces ["4", "+", "7", "*", "2"] `allShouldBe` (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
             ++ putSpaces ["(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
 
-        describe "assignment" $ testMany expression $
+        describe "assignment" $ testMany (fmap fst expression) $
                putSpaces ["x", "=", "4"] `allShouldBe` (LValueBinding "x" :=: LiteralNumber 4)
             ++ putSpaces ["x", "=", "4+7"] `allShouldBe` (LValueBinding "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
             ++ putSpaces ["x.y", "=", "4"] `allShouldBe` (IdentifierKey "y" `LValueProperty` Identifier "x" :=: LiteralNumber 4)
@@ -135,27 +135,27 @@ spec = do
             ++ putSpaces ["x", "/=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :/: LiteralNumber 4))
             ++ putSpaces ["x", "%=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :%: LiteralNumber 4))
 
-        describe "other" $ testMany expression $
+        describe "other" $ testMany (fmap fst expression) $
                putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` ((IdentifierKey "y" `PropertyOf` Identifier "x") :+: LiteralNumber 3)
             ++ putSpaces ["x", "[", "'y'", "]", "+", "3"] `allShouldBe` ((ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x") :+: LiteralNumber 3)
             ++ putSpaces ["x", "(", ")", "+", "3"] `allShouldBe` (([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
 
     describe "postfix operations" $ do
-        describe "property access" $ testMany expression $
+        describe "property access" $ testMany (fmap fst expression) $
                putSpaces ["'str'", ".", "p1"] `allShouldBe` (IdentifierKey "p1" `PropertyOf` LiteralString "str")
             ++ putSpaces ["'str'", ".", "p1", ".", "p2"] `allShouldBe` (IdentifierKey "p2" `PropertyOf` (IdentifierKey "p1" `PropertyOf` LiteralString "str"))
 
-        describe "indexing" $ testMany expression $
+        describe "indexing" $ testMany (fmap fst expression) $
                putSpaces ["'str'", "[", "'p1'", "]"] `allShouldBe` (ExpressionKey (LiteralString "p1") `PropertyOf` LiteralString "str")
             ++ putSpaces ["'str'", "[", "'p1'", "]", "[", "'p2'", "]"] `allShouldBe` (ExpressionKey (LiteralString "p2") `PropertyOf` (ExpressionKey (LiteralString "p1") `PropertyOf` LiteralString "str"))
 
-        describe "function call" $ testMany expression $
+        describe "function call" $ testMany (fmap fst expression) $
                putSpaces ["x", "(", ")"] `allShouldBe` ([] `FunctionCall` Identifier "x")
             ++ putSpaces ["x", "(", "3", ")"] `allShouldBe` ([LiteralNumber 3] `FunctionCall` Identifier "x")
             ++ putSpaces ["x", "(", "3", ",", "4", ")"] `allShouldBe` ([LiteralNumber 3, LiteralNumber 4] `FunctionCall` Identifier "x")
             ++ putSpaces ["x", "(", "3", ")", "(", "4", ")"] `allShouldBe` ([LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
 
-        describe "mixed" $ testMany expression
+        describe "mixed" $ testMany (fmap fst expression)
             [ ("x.y['z']", ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x"))
             , ("x['y'].z", IdentifierKey "z" `PropertyOf` (ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x"))
             , ("x.y('z')", [LiteralString "z"] `FunctionCall` (IdentifierKey "y" `PropertyOf` Identifier "x"))
@@ -165,9 +165,9 @@ spec = do
             , ("x.y['z'](0)", [LiteralNumber 0] `FunctionCall` (ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x")))
             ]
 
-    describe "declarations" $ do
+    describe "statements" $ do
         describe "let declarations" $ do
-            describe "valid" $ testMany letDeclaration $
+            describe "valid" $ testMany (fmap fst statement) $
                    putSpaces ["let ", "x", "=", "42"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 42))]
                 ++ putSpaces ["let ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "a", Just (LiteralNumber 1)), (DeclareBinding "b", Just (LiteralNumber 2))]
                 ++ putSpaces ["let ", "x"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Nothing)]
@@ -175,20 +175,20 @@ spec = do
                 ++ putSpaces ["let ", "x", "=", "3", "+", "7", ",", "y"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7)), (DeclareBinding "y", Nothing)]
                 ++ putSpaces ["let ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))]
 
-            describe "invalid" $ testManyFail constDeclaration
+            describe "invalid" $ testManyFail (fmap fst statement)
                 [ "let 2 = x"
                 , "let = x"
                 , "let = 3"
                 ]
 
         describe "const declarations" $ do
-            describe "valid" $ testMany constDeclaration $
+            describe "valid" $ testMany (fmap fst statement) $
                    putSpaces ["const ", "x", "=", "42"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 42)]
                 ++ putSpaces ["const ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "a", LiteralNumber 1), (DeclareBinding "b", LiteralNumber 2)]
                 ++ putSpaces ["const ", "x", "=", "3", "+", "7"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 3 :+: LiteralNumber 7)]
                 ++ putSpaces ["const ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)]
 
-            describe "invalid" $ testManyFail constDeclaration
+            describe "invalid" $ testManyFail (fmap fst statement)
                 [ "const x"
                 , "const x, y"
                 , "const x = 4, y"
@@ -198,11 +198,11 @@ spec = do
                 , "const = 3"
                 ]
 
-    describe "scopes" $ testMany statement $
+    describe "scopes" $ testMany (fmap fst statement) $
            putSpaces ["{", "}"] `allShouldBe` BlockScope []
         ++ putSpaces ["{", "x", "}"] `allShouldBe` BlockScope [Expression (Identifier "x")]
 
-    describe "if statement" $ testMany statement $
+    describe "if statement" $ testMany (fmap fst statement) $
            putSpaces ["if", "(", "null", ")", "x = 5"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Nothing }
         ++ putSpaces ["if", "(", "null", ")", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Nothing }
         ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
