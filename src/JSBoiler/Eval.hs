@@ -87,6 +87,22 @@ evalStatement stack statement = case statement of
         newStack <- addScope stack M.empty
         evalCode newStack statements
 
+    IfStatement { condition = cond, thenWhat = thenW, elseWhat = elseW } -> do
+        condValue <- evalExpression stack cond >>= booleanValue
+        if condValue
+            then evalStatement stack thenW
+            else case elseW of
+                Nothing -> return Nothing
+                Just what -> evalStatement stack what
+
+    WhileStatement { condition = cond, body = body } ->
+        let while = do
+                condValue <- evalExpression stack cond >>= booleanValue
+                if condValue
+                    then evalStatement stack body >> while
+                    else return Nothing
+        in while
+
     _            -> error "Not implemented"
 
 evalCode :: Stack -> [Statement] -> IO (Maybe JSType)

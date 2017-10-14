@@ -140,6 +140,32 @@ letDeclaration = do
             return (decl, mexpr)
 
 
+blockScope = BlockScope <$> between (char '{') (char '}') (many statement)
+ifStatement = do
+    string "if"
+    spaces
+    char '('
+    cond <- expression
+    char ')'
+    thenW <- statement
+    elseW <- optionMaybe (string "else" >> statement)
+    return IfStatement
+        { condition = cond
+        , thenWhat = thenW
+        , elseWhat = elseW
+        }
+whileStatement = do
+    string "while"
+    spaces
+    char '('
+    cond <- expression
+    char ')'
+    body <- statement
+    return WhileStatement
+        { condition = cond
+        , body = body
+        }
+
 statement = do
     spaces
     result <- statement'
@@ -150,7 +176,9 @@ statement = do
     where
         statement' = try constDeclaration
                  <|> try letDeclaration
-                 <|> BlockScope <$> between (char '{') (char '}') (many statement)
+                 <|> try blockScope
+                 <|> try ifStatement
+                 <|> try whileStatement
                  <|> fmap Expression expression
 
 
