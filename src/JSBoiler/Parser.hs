@@ -2,8 +2,10 @@
 module JSBoiler.Parser where
 
 import Control.Monad (liftM2, void)
+import Data.Maybe (fromMaybe)
 import Text.Parsec
 import Text.Parsec.Expr
+
 import JSBoiler.Statement
 
 
@@ -47,11 +49,20 @@ identifier = do
     let first = letter <|> char '_' <|> char '$'
     liftM2 (:) first (many identifierSymbol)
 
+objectLiteral = LiteralObject <$> between (char '{') (char '}') (property `sepEndBy` char ',')
+    where
+        property = do
+            key <- between spaces spaces identifier -- handle numbers
+                                                    -- handle [expressions]
+            value <- option (Identifier key) (char ':' >> expression)
+            return (key, value)
+
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term
     where
         term = between spaces spaces
              $ between (char '(') (char ')') expression
+           <|> objectLiteral
            <|> fmap LiteralNumber jsNumber
            <|> fmap LiteralString jsString
            <|> try (fmap (const LiteralNull) jsNull)

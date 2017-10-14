@@ -96,6 +96,11 @@ spec = do
             , ("'line1\\nline2'", LiteralString "line1\nline2")
             ]
 
+        describe "objects" $ testMany expression $
+               putSpaces ["{", "x", ":", "3", "}"] `allShouldBe` (LiteralObject [("x", LiteralNumber 3)])
+            ++ putSpaces ["{", "x", ":", "3", ",", "y", ":", "7", "}"] `allShouldBe` (LiteralObject [("x", LiteralNumber 3), ("y", LiteralNumber 7)])
+            ++ putSpaces ["{", "x", "}"] `allShouldBe` (LiteralObject [("x", Identifier "x")])
+
         describe "arithmetic" $ testMany expression $
                putSpaces ["3", "+", "7"] `allShouldBe` (LiteralNumber 3 :+: LiteralNumber 7)
             ++ putSpaces ["3", "-", "7"] `allShouldBe` (LiteralNumber 3 :-: LiteralNumber 7)

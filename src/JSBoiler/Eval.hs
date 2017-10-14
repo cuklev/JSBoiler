@@ -2,7 +2,7 @@ module JSBoiler.Eval where
 
 import Control.Monad (liftM2, forM_)
 import Data.Maybe (fromMaybe)
-import Data.IORef (readIORef)
+import Data.IORef
 import qualified Data.Map.Strict as M
 
 import JSBoiler.Statement
@@ -35,9 +35,22 @@ evalExpression stack expr =
         LiteralString x  -> return $ JSString x
         LiteralBoolean x -> return $ JSBoolean x
         LiteralNull      -> return JSNull
+        LiteralObject x  -> mapM (\(k, e) -> eval e >>= \v -> return (k, v)) x
+                                >>= makeObject
 
         Identifier x     -> getBindingValue x stack
                                 >>= maybe (error $ x ++ " is not defined") return
+
+        name `PropertyOf` x -> do
+            vx <- eval x
+            let ref = toObjectRef vx
+            fromMaybe JSUndefined <$> getPropertyValue name ref
+        expr `IndexOf` x    -> do
+            vx <- eval x
+            index <- eval expr
+            name <- stringValue index
+            let ref = toObjectRef vx
+            fromMaybe JSUndefined <$> getPropertyValue name ref
 
         x :+: y -> apply (>+) x y
         x :-: y -> apply (>-) x y

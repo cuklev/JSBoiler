@@ -35,6 +35,15 @@ data Property = Property { value :: JSType
                          , set :: Maybe Function
                          }
 
+valuedProperty :: JSType -> Property
+valuedProperty x = Property { value = x
+                            , writeable = True
+                            , enumerable = True
+                            , configurable = True
+                            , get = Nothing
+                            , set = Nothing
+                            }
+
 data Function = Function { boundThis :: Maybe (IORef Object)
                          , functionScope :: Stack
                          , argumentNames :: [String]

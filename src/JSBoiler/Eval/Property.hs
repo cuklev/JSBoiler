@@ -58,3 +58,14 @@ setPropertyValue name ref value = do
                 obj' = obj { properties = props' }
             in writeIORef ref obj'
         Just prop -> setValue prop value
+
+makeObject :: [(String, JSType)] -> IO JSType
+makeObject pairs =
+    let props = map toProperty pairs
+        obj = Object { properties = M.fromList props
+                     , behaviour = Nothing
+                     , prototype = Nothing -- should be Object.prototype
+                     }
+    in JSObject <$> newIORef obj
+
+    where toProperty = fmap valuedProperty

@@ -19,6 +19,7 @@ data Expression = LiteralNumber Double
                 | LiteralString String
                 | LiteralNull
                 | LiteralBoolean Bool
+                | LiteralObject [(String, Expression)]
 
                 | Identifier String
 
