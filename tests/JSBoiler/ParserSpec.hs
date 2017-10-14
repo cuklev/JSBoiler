@@ -97,9 +97,12 @@ spec = do
             ]
 
         describe "objects" $ testMany expression $
-               putSpaces ["{", "x", ":", "3", "}"] `allShouldBe` (LiteralObject [("x", LiteralNumber 3)])
-            ++ putSpaces ["{", "x", ":", "3", ",", "y", ":", "7", "}"] `allShouldBe` (LiteralObject [("x", LiteralNumber 3), ("y", LiteralNumber 7)])
-            ++ putSpaces ["{", "x", "}"] `allShouldBe` (LiteralObject [("x", Identifier "x")])
+               putSpaces ["{", "}"] `allShouldBe` (LiteralObject [])
+            ++ putSpaces ["{", "x", ":", "3", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", LiteralNumber 3)])
+            ++ putSpaces ["{", "x", ":", "3", ",", "y", ":", "7", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", LiteralNumber 3), (IdentifierKey "y", LiteralNumber 7)])
+            ++ putSpaces ["{", "x", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", Identifier "x")])
+            ++ putSpaces ["{", "x", ",", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", Identifier "x")])
+            ++ putSpaces ["{", "[3 + 5]", ":", "1", "}"] `allShouldBe` (LiteralObject [(ExpressionKey (LiteralNumber 3 :+: LiteralNumber 5), LiteralNumber 1)])
 
         describe "arithmetic" $ testMany expression $
                putSpaces ["3", "+", "7"] `allShouldBe` (LiteralNumber 3 :+: LiteralNumber 7)

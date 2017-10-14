@@ -49,13 +49,28 @@ identifier = do
     let first = letter <|> char '_' <|> char '$'
     liftM2 (:) first (many identifierSymbol)
 
-objectLiteral = LiteralObject <$> between (char '{') (char '}') (property `sepEndBy` char ',')
+objectLiteral = do
+    char '{'
+    spaces
+    props <- property `sepEndBy` (char ',' >> spaces)
+    char '}'
+    return $ LiteralObject props
+
     where
-        property = do
-            key <- between spaces spaces identifier -- handle numbers
-                                                    -- handle [expressions]
+        property = between spaces spaces (expressionKey <|> identKey)
+        expressionKey = do
+            char '['
+            key <- expression
+            char ']'
+            spaces
+            char ':'
+            value <- expression
+            return (ExpressionKey key, value)
+        identKey = do
+            key <- identifier -- TODO: handle numbers
+            spaces
             value <- option (Identifier key) (char ':' >> expression)
-            return (key, value)
+            return (IdentifierKey key, value)
 
 expression :: Parsec String () Expression
 expression = buildExpressionParser table term

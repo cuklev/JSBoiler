@@ -35,7 +35,10 @@ evalExpression stack expr =
         LiteralString x  -> return $ JSString x
         LiteralBoolean x -> return $ JSBoolean x
         LiteralNull      -> return JSNull
-        LiteralObject x  -> mapM (\(k, e) -> eval e >>= \v -> return (k, v)) x
+        LiteralObject x  -> let getKey x = case x of
+                                    IdentifierKey x -> return x
+                                    ExpressionKey x -> eval x >>= stringValue
+                            in mapM (\(k, v) -> liftM2 (,) (getKey k) (eval v)) x
                                 >>= makeObject
 
         Identifier x     -> getBindingValue x stack
