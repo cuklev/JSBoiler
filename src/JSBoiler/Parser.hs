@@ -140,7 +140,7 @@ letDeclaration = do
             return (decl, mexpr)
 
 
-blockScope = BlockScope <$> between (char '{') (char '}') (many statement)
+blockScope = BlockScope <$> between (char '{') (char '}' >> spaces) (many statement)
 ifStatement = do
     string "if"
     spaces
@@ -168,18 +168,14 @@ whileStatement = do
 
 statement = do
     spaces
-    result <- statement'
-    -- Should detect if endOfLine was parsed
-    eof <|> void (char ';' <|> endOfLine) -- Statements are not required to end with ;
+    result <- try constDeclaration
+          <|> try letDeclaration
+          <|> try blockScope
+          <|> try ifStatement
+          <|> try whileStatement
+          <|> fmap Expression expression
+    void (char ';') <|> return ()
     return result
-
-    where
-        statement' = try constDeclaration
-                 <|> try letDeclaration
-                 <|> try blockScope
-                 <|> try ifStatement
-                 <|> try whileStatement
-                 <|> fmap Expression expression
 
 
 parseCode :: String -> Either ParseError [Statement]
