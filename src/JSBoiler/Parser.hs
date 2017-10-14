@@ -150,6 +150,7 @@ statement = do
     where
         statement' = try constDeclaration
                  <|> try letDeclaration
+                 <|> BlockScope <$> between (char '{') (char '}') (many statement)
                  <|> fmap Expression expression
 
 

@@ -83,6 +83,10 @@ evalStatement stack statement = case statement of
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
         return Nothing
 
+    BlockScope statements -> do
+        newStack <- addScope stack M.empty
+        evalCode newStack statements
+
     _            -> error "Not implemented"
 
 evalCode :: Stack -> [Statement] -> IO (Maybe JSType)
