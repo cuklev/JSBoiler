@@ -103,7 +103,10 @@ evalStatement stack statement = case statement of
     _            -> error "Not implemented"
 
 evalCode :: Stack -> [Statement] -> IO (Maybe JSType)
-evalCode stack statements = last <$> mapM (evalStatement stack) statements
+evalCode stack statements = safeLast <$> mapM (evalStatement stack) statements
+    where
+        safeLast [] = Nothing
+        safeLast x = last x
 
 initStack :: IO Stack
 initStack = addScope [] $ M.fromList
