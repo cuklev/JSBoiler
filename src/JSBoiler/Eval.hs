@@ -89,17 +89,14 @@ evalStatement stack statement = case statement of
 
     IfStatement { condition = cond, thenWhat = thenW, elseWhat = elseW } -> do
         condValue <- evalExpression stack cond >>= booleanValue
-        if condValue
-            then evalStatement stack thenW
-            else case elseW of
-                Nothing -> return Nothing
-                Just what -> evalStatement stack what
+        maybe (return Nothing) (evalStatement stack)
+            $ if condValue then thenW else elseW
 
     WhileStatement { condition = cond, body = body } ->
         let while = do
                 condValue <- evalExpression stack cond >>= booleanValue
                 if condValue
-                    then evalStatement stack body >> while
+                    then maybe (return Nothing) (evalStatement stack) body >> while
                     else return Nothing
         in while
 

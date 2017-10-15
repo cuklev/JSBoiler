@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 module JSBoiler.Parser where
 
-import Control.Monad (liftM2, void)
-import Data.Maybe (fromMaybe)
+import Control.Monad (liftM2, void, join)
+import Data.Maybe (fromMaybe, catMaybes)
 import Text.Parsec
 import Text.Parsec.Expr
 
@@ -64,24 +64,24 @@ objectLiteral = do
         property = between spaces spaces (expressionKey <|> identKey)
         expressionKey = do
             char '['
-            key <- fmap fst expression
+            key <- fmap snd expression
             char ']'
             spaces
             char ':'
-            value <- fmap fst expression
+            value <- fmap snd expression
             return (ExpressionKey key, value)
         identKey = do
             key <- identifier -- TODO: handle numbers
             spaces
-            value <- option (Identifier key) (char ':' >> fmap fst expression)
+            value <- option (Identifier key) (char ':' >> fmap snd expression)
             return (IdentifierKey key, value)
 
-expression :: Parsec String () (Expression, Bool)
+--expression :: Parsec String () (Expression, Bool)
 expression = buildExpressionParser table term
     where
         term = do
             spaces
-            t <- between (char '(') (char ')') (fmap fst expression)
+            t <- between (char '(') (char ')') (fmap snd expression)
                    <|> objectLiteral
                    <|> fmap LiteralNumber jsNumber
                    <|> fmap LiteralString jsString
@@ -89,7 +89,7 @@ expression = buildExpressionParser table term
                    <|> try (fmap LiteralBoolean jsBoolean)
                    <|> fmap Identifier identifier
             nl <- trackNewLineSpaces
-            return (t, nl)
+            return (nl, t)
 
         table = [ [Postfix chainPostfixOperations]
                 , [binaryOperator "*" (:*:) AssocLeft, binaryOperator "/" (:/:) AssocLeft, binaryOperator "%" (:%:) AssocLeft]
@@ -101,22 +101,22 @@ expression = buildExpressionParser table term
         binaryOperator x f = Infix $ try $ do
             string x
             notFollowedBy (char '=')
-            return (\(t1, _) (t2, nl) -> (f t1 t2, nl))
+            return (\(_, t1) (nl, t2) -> (nl, f t1 t2))
 
         propertyAccess = char '.' >> spaces >> identifier
-        indexAccess = between (char '[') (char ']') (fmap fst expression)
-        functionCall = between (char '(' >> spaces) (char ')') (fmap fst expression `sepBy` char ',')
+        indexAccess = between (char '[') (char ']') (fmap snd expression)
+        functionCall = between (char '(' >> spaces) (char ')') (fmap snd expression `sepBy` char ',')
 
         postfixOperations = do
             expr <- fmap (PropertyOf . IdentifierKey) propertyAccess
                     <|> fmap (PropertyOf . ExpressionKey) indexAccess
                     <|> fmap FunctionCall functionCall
             nl <- trackNewLineSpaces
-            return (expr, nl)
+            return (nl, expr)
 
         chainPostfixOperations = do
             ps <- many postfixOperations
-            return $ \e -> foldl (\(e, _) (p, nl) -> (p e, nl)) e ps
+            return $ \e -> foldl (\(_, e) (nl, p) -> (nl, p e)) e ps
 
         assign (Identifier l) r = LValueBinding l :=: r
         assign (PropertyOf prop expr) r = LValueProperty prop expr :=: r
@@ -132,23 +132,23 @@ constDeclaration = do
     string "const"
     space
     decls <- decl' `sepBy1` char ','
-    let (result, nls) = unzip decls
-    return (ConstDeclaration result, last nls)
+    let (nls, result) = unzip decls
+    return (last nls, ConstDeclaration result)
 
     where decl' = do
             spaces
             decl <- declaration
             spaces
             char '='
-            (expr, nl) <- expression
-            return ((decl, expr), nl)
+            (nl, expr) <- expression
+            return (nl, (decl, expr))
 
 letDeclaration = do
     string "let"
     space
     decls <- decl' `sepBy1` char ','
-    let (result, nls) = unzip decls
-    return (LetDeclaration result, last nls)
+    let (nls, result) = unzip decls
+    return (last nls, LetDeclaration result)
 
     where decl' = do
             spaces
@@ -156,63 +156,67 @@ letDeclaration = do
             nl0 <- trackNewLineSpaces
             mexpr <- optionMaybe (char '=' >> expression)
             return $ case mexpr of
-                Nothing -> ((decl, Nothing), nl0)
-                Just (expr, nl) -> ((decl, Just expr), nl)
+                Nothing -> (nl0, (decl, Nothing))
+                Just (nl, expr) -> (nl, (decl, Just expr))
 
 
 blockScope = do
     char '{'
-    spaces -- REMOVE, only here for empty blocks, must implement empty statements correctly
-    statements <- many statement
-    char '}'
     spaces
-    return (BlockScope statements, True)
+    statements <- catMaybes <$> many mstatement
+    spaces
+    char '}'
+    return (True, BlockScope statements)
 
 ifStatement = do
     string "if"
     spaces
     char '('
-    cond <- fmap fst expression
+    cond <- fmap snd expression
     char ')'
-    thenW <- statement
-    elseW <- optionMaybe (string "else" >> notFollowedBy identifierSymbol >> statement)
+    thenW <- mstatement
+    elseW <- join <$> optionMaybe (spaces >> string "else" >> notFollowedBy identifierSymbol >> mstatement)
     let result = IfStatement
             { condition = cond
             , thenWhat = thenW
             , elseWhat = elseW
             }
-    return (result, True)
+    return (True, result)
 
 whileStatement = do
     string "while"
     spaces
     char '('
-    cond <- fmap fst expression
+    cond <- fmap snd expression
     char ')'
-    body <- statement
+    body <- mstatement
     let result = WhileStatement
             { condition = cond
             , body = body
             }
-    return (result, True)
+    return (True, result)
 
-statement = do
+mstatement = do
     spaces
-    (result, nl) <- try constDeclaration
-          <|> try letDeclaration
-          <|> try blockScope
-          <|> try ifStatement
-          <|> try whileStatement
-          <|> fmap (\(e, nl) -> (Expression e, nl)) expression
+    (char ';' >> spaces >> return Nothing)
+        <|> do
+            (nl, result) <- tryAll
 
-    void (char ';' >> spaces) <|> if nl then return () else notFollowedBy identifierSymbol
-    return result
+            void (char ';' >> spaces) <|> if nl then return () else notFollowedBy identifierSymbol
+            return (Just result)
 
+    where
+        tryAll = try constDeclaration
+             <|> try letDeclaration
+             <|> try blockScope
+             <|> try ifStatement
+             <|> try whileStatement
+             <|> fmap (fmap Expression) expression
 
 parseCode :: String -> Either ParseError [Statement]
 parseCode = parse statements "js"
     where
         statements = do
-            result <- many statement
+            result <- catMaybes <$> many mstatement
             eof
             return result

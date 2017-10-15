@@ -7,11 +7,11 @@ data Statement = Expression Expression
 
                | BlockScope [Statement]
                | IfStatement { condition :: Expression
-                             , thenWhat  :: Statement
+                             , thenWhat  :: Maybe Statement
                              , elseWhat  :: Maybe Statement
                              }
                | WhileStatement { condition :: Expression
-                                , body      :: Statement
+                                , body      :: Maybe Statement
                                 }
                deriving (Show, Eq)
 
