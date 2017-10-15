@@ -105,6 +105,15 @@ spec = do
             ++ putSpaces ["{", "x", ",", "}"] `allShouldBe` (LiteralObject [(IdentifierKey "x", Identifier "x")])
             ++ putSpaces ["{", "[3 + 5]", ":", "1", "}"] `allShouldBe` (LiteralObject [(ExpressionKey (LiteralNumber 3 :+: LiteralNumber 5), LiteralNumber 1)])
 
+        describe "functions" $ testMany (fmap snd expression) $
+               putSpaces ["function", "(", ")", "{", "}"] `allShouldBe` LiteralFunction [] []
+            ++ putSpaces ["function", " name", "(", ")", "{", "}"] `allShouldBe` LiteralFunction [] []
+            ++ putSpaces ["function(", "x", "){}"] `allShouldBe` LiteralFunction [(DeclareBinding "x", Nothing)] []
+            ++ putSpaces ["function(", "x", ",", "y", "){}"] `allShouldBe` LiteralFunction [(DeclareBinding "x", Nothing), (DeclareBinding "y", Nothing)] []
+            ++ putSpaces ["function(", "x", "=", "1 + 5", "){}"] `allShouldBe` LiteralFunction [(DeclareBinding "x", Just (LiteralNumber 1 :+: LiteralNumber 5))] []
+            ++ putSpaces ["function(){", "x = 4", "}"] `allShouldBe` LiteralFunction [] [Expression (LValueBinding "x" :=: LiteralNumber 4)]
+            ++ putSpaces ["function(){", "x = 4;", "}"] `allShouldBe` LiteralFunction [] [Expression (LValueBinding "x" :=: LiteralNumber 4)]
+
         describe "arithmetic" $ testMany (fmap snd expression) $
                putSpaces ["3", "+", "7"] `allShouldBe` (LiteralNumber 3 :+: LiteralNumber 7)
             ++ putSpaces ["3", "-", "7"] `allShouldBe` (LiteralNumber 3 :-: LiteralNumber 7)

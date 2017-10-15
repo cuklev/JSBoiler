@@ -76,6 +76,31 @@ objectLiteral = do
             value <- option (Identifier key) (char ':' >> fmap snd expression)
             return (IdentifierKey key, value)
 
+functionLiteral = do
+    string "function"
+    spaces -- can have name, should parse
+    char '('
+    spaces
+    args <- decl' `sepBy` char ','
+    char ')'
+    spaces
+    char '{'
+    spaces
+    statements <- nonEmptyStatements
+    spaces
+    char '}'
+    return $ LiteralFunction args statements
+
+    where
+        decl' = do
+            spaces
+            decl <- declaration
+            spaces
+            mexpr <- optionMaybe (char '=' >> expression)
+            return $ case mexpr of
+                Nothing -> (decl, Nothing)
+                Just (_, expr) -> (decl, Just expr)
+
 --expression :: Parsec String () (Expression, Bool)
 expression = buildExpressionParser table term
     where
@@ -87,6 +112,7 @@ expression = buildExpressionParser table term
                    <|> fmap LiteralString jsString
                    <|> try (fmap (const LiteralNull) jsNull)
                    <|> try (fmap LiteralBoolean jsBoolean)
+                   <|> try functionLiteral
                    <|> fmap Identifier identifier
             nl <- trackNewLineSpaces
             return (nl, t)
@@ -150,7 +176,8 @@ letDeclaration = do
     let (nls, result) = unzip decls
     return (last nls, LetDeclaration result)
 
-    where decl' = do
+    where
+        decl' = do
             spaces
             decl <- declaration
             nl0 <- trackNewLineSpaces
@@ -163,7 +190,7 @@ letDeclaration = do
 blockScope = do
     char '{'
     spaces
-    statements <- catMaybes <$> many mstatement
+    statements <- nonEmptyStatements
     spaces
     char '}'
     return (True, BlockScope statements)
@@ -196,6 +223,7 @@ whileStatement = do
             }
     return (True, result)
 
+nonEmptyStatements = catMaybes <$> many mstatement
 mstatement = do
     spaces
     (char ';' >> spaces >> return Nothing)
@@ -217,6 +245,6 @@ parseCode :: String -> Either ParseError [Statement]
 parseCode = parse statements "js"
     where
         statements = do
-            result <- catMaybes <$> many mstatement
+            result <- nonEmptyStatements
             eof
             return result

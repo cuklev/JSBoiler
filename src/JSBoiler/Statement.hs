@@ -20,11 +20,12 @@ data Expression = LiteralNumber Double
                 | LiteralNull
                 | LiteralBoolean Bool
                 | LiteralObject [(PropertyKey, Expression)]
+                | LiteralFunction [(Declaration, Maybe Expression)] [Statement]
 
                 | Identifier String
 
-                | PropertyOf PropertyKey Expression  -- Flipped
-                | FunctionCall [Expression] Expression-- Flipped
+                | PropertyOf PropertyKey Expression    -- Flipped
+                | FunctionCall [Expression] Expression -- Flipped
 
                 -- arithmetic operators
                 | Expression :+: Expression
