@@ -7,10 +7,11 @@
 
 ### TODO
 - All kinds of binary operators
+  - Arithmetic, logical and assignment work
 - Unary operators
 - Ternary operator
 - Functions
-- Objects
+- ~~Objects~~
 - Arrays
 - Standard library
 - Various other stuff
