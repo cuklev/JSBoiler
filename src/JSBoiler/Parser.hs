@@ -162,7 +162,8 @@ letDeclaration = do
 
 blockScope = do
     char '{'
-    statements <- many (fmap fst statement)
+    spaces -- REMOVE, only here for empty blocks, must implement empty statements correctly
+    statements <- many statement
     char '}'
     spaces
     return (BlockScope statements, True)
@@ -173,17 +174,14 @@ ifStatement = do
     char '('
     cond <- fmap fst expression
     char ')'
-    (thenW, nl0) <- statement
-    melse <- optionMaybe (string "else" >> notFollowedBy identifierSymbol >> statement)
-    let (elseW, nl) = case melse of
-            Nothing -> (Nothing, nl0)
-            Just (elseW, nl) -> (Just elseW, nl)
+    thenW <- statement
+    elseW <- optionMaybe (string "else" >> notFollowedBy identifierSymbol >> statement)
     let result = IfStatement
             { condition = cond
             , thenWhat = thenW
             , elseWhat = elseW
             }
-    return (result, nl)
+    return (result, True)
 
 whileStatement = do
     string "while"
@@ -191,22 +189,23 @@ whileStatement = do
     char '('
     cond <- fmap fst expression
     char ')'
-    (body, nl) <- statement
+    body <- statement
     let result = WhileStatement
             { condition = cond
             , body = body
             }
-    return (result, nl)
+    return (result, True)
 
 statement = do
     spaces
-    result <- try constDeclaration
+    (result, nl) <- try constDeclaration
           <|> try letDeclaration
           <|> try blockScope
           <|> try ifStatement
           <|> try whileStatement
           <|> fmap (\(e, nl) -> (Expression e, nl)) expression
-    --void (char ';') <|> return ()
+
+    void (char ';' >> spaces) <|> if nl then return () else notFollowedBy identifierSymbol
     return result
 
 
@@ -214,6 +213,6 @@ parseCode :: String -> Either ParseError [Statement]
 parseCode = parse statements "js"
     where
         statements = do
-            result <- many (fmap fst statement)
+            result <- many statement
             eof
             return result

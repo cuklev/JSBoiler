@@ -165,47 +165,47 @@ spec = do
             , ("x.y['z'](0)", [LiteralNumber 0] `FunctionCall` (ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x")))
             ]
 
+    describe "let declarations" $ do
+        describe "valid" $ testMany (fmap fst letDeclaration) $
+               putSpaces ["let ", "x", "=", "42"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 42))]
+            ++ putSpaces ["let ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "a", Just (LiteralNumber 1)), (DeclareBinding "b", Just (LiteralNumber 2))]
+            ++ putSpaces ["let ", "x"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Nothing)]
+            ++ putSpaces ["let ", "x", "=", "3", "+", "7"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7))]
+            ++ putSpaces ["let ", "x", "=", "3", "+", "7", ",", "y"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7)), (DeclareBinding "y", Nothing)]
+            ++ putSpaces ["let ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))]
+
+        describe "invalid" $ testManyFail (fmap fst letDeclaration)
+            [ "let 2 = x"
+            , "let = x"
+            , "let = 3"
+            ]
+
+    describe "const declarations" $ do
+        describe "valid" $ testMany (fmap fst constDeclaration) $
+               putSpaces ["const ", "x", "=", "42"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 42)]
+            ++ putSpaces ["const ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "a", LiteralNumber 1), (DeclareBinding "b", LiteralNumber 2)]
+            ++ putSpaces ["const ", "x", "=", "3", "+", "7"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 3 :+: LiteralNumber 7)]
+            ++ putSpaces ["const ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)]
+
+        describe "invalid" $ testManyFail (fmap fst constDeclaration)
+            [ "const x"
+            , "const x, y"
+            , "const x = 4, y"
+            , "const x, y = 4"
+            , "const 2 = x"
+            , "const = x"
+            , "const = 3"
+            ]
+
     describe "statements" $ do
-        describe "let declarations" $ do
-            describe "valid" $ testMany (fmap fst statement) $
-                   putSpaces ["let ", "x", "=", "42"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 42))]
-                ++ putSpaces ["let ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "a", Just (LiteralNumber 1)), (DeclareBinding "b", Just (LiteralNumber 2))]
-                ++ putSpaces ["let ", "x"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Nothing)]
-                ++ putSpaces ["let ", "x", "=", "3", "+", "7"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7))]
-                ++ putSpaces ["let ", "x", "=", "3", "+", "7", ",", "y"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just (LiteralNumber 3 :+: LiteralNumber 7)), (DeclareBinding "y", Nothing)]
-                ++ putSpaces ["let ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` LetDeclaration [(DeclareBinding "x", Just ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2))]
+        describe "scopes" $ testMany statement $
+               putSpaces ["{", "}"] `allShouldBe` BlockScope []
+            ++ putSpaces ["{", "x", "}"] `allShouldBe` BlockScope [Expression (Identifier "x")]
 
-            describe "invalid" $ testManyFail (fmap fst statement)
-                [ "let 2 = x"
-                , "let = x"
-                , "let = 3"
-                ]
-
-        describe "const declarations" $ do
-            describe "valid" $ testMany (fmap fst statement) $
-                   putSpaces ["const ", "x", "=", "42"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 42)]
-                ++ putSpaces ["const ", "a", "=", "1", ",", "b", "=", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "a", LiteralNumber 1), (DeclareBinding "b", LiteralNumber 2)]
-                ++ putSpaces ["const ", "x", "=", "3", "+", "7"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", LiteralNumber 3 :+: LiteralNumber 7)]
-                ++ putSpaces ["const ", "x", "=", "(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ConstDeclaration [(DeclareBinding "x", (LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)]
-
-            describe "invalid" $ testManyFail (fmap fst statement)
-                [ "const x"
-                , "const x, y"
-                , "const x = 4, y"
-                , "const x, y = 4"
-                , "const 2 = x"
-                , "const = x"
-                , "const = 3"
-                ]
-
-    describe "scopes" $ testMany (fmap fst statement) $
-           putSpaces ["{", "}"] `allShouldBe` BlockScope []
-        ++ putSpaces ["{", "x", "}"] `allShouldBe` BlockScope [Expression (Identifier "x")]
-
-    describe "if statement" $ testMany (fmap fst statement) $
-           putSpaces ["if", "(", "null", ")", "x = 5"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Nothing }
-        ++ putSpaces ["if", "(", "null", ")", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Nothing }
-        ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
-        ++ putSpaces ["if", "(", "null", ")", "{", "}", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
-        ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (BlockScope []) }
-        ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (BlockScope []) }
+        describe "if statement" $ testMany statement $
+               putSpaces ["if", "(", "null", ")", "x = 5"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Nothing }
+            ++ putSpaces ["if", "(", "null", ")", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Nothing }
+            ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
+            ++ putSpaces ["if", "(", "null", ")", "{", "}", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
+            ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (BlockScope []) }
+            ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (BlockScope []) }
