@@ -209,3 +209,7 @@ spec = do
             ++ putSpaces ["if", "(", "null", ")", "{", "}", "else ", "x = 6"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
             ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = Expression (LValueBinding "x" :=: LiteralNumber 5), elseWhat = Just (BlockScope []) }
             ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "{", "}"] `allShouldBe` IfStatement { condition = LiteralNull, thenWhat = BlockScope [], elseWhat = Just (BlockScope []) }
+
+        describe "while statement" $ testMany statement $
+               putSpaces ["while", "(", "null", ")", "x = 5"] `allShouldBe` WhileStatement { condition = LiteralNull, body = Expression (LValueBinding "x" :=: LiteralNumber 5) }
+            ++ putSpaces ["while", "(", "null", ")", "{", "}"] `allShouldBe` WhileStatement { condition = LiteralNull, body = BlockScope [] }
