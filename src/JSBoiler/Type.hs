@@ -46,8 +46,8 @@ valuedProperty x = Property { value = x
 
 data Function = Function { boundThis :: Maybe (IORef Object)
                          , functionScope :: Stack
-                         , argumentNames :: [String]
-                         , function :: Stack -> IO JSType
+                         , argumentNames :: [(Declaration, Maybe Expression)]
+                         , function :: Stack -> IO (Maybe JSType)
                          }
 
 data Binding = Binding

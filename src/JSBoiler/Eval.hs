@@ -11,6 +11,7 @@ import JSBoiler.Eval.Binding
 import JSBoiler.Eval.Operator
 import JSBoiler.Eval.Property
 import JSBoiler.Eval.Value
+import JSBoiler.Eval.Function
 
 
 evalExpression :: Stack -> Expression -> IO JSType
@@ -35,8 +36,12 @@ evalExpression stack expr =
         LiteralString x  -> return $ JSString x
         LiteralBoolean x -> return $ JSBoolean x
         LiteralNull      -> return JSNull
+
         LiteralObject x  -> mapM (\(k, v) -> liftM2 (,) (getKeyName k) (eval v)) x
                                 >>= makeObject
+
+        LiteralFunction args statements -> makeFunction evalCode stack args statements
+
         Identifier x     -> getBindingValue x stack
                                 >>= maybe (error $ x ++ " is not defined") return
 

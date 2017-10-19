@@ -101,7 +101,6 @@ functionLiteral = do
                 Nothing -> (decl, Nothing)
                 Just (_, expr) -> (decl, Just expr)
 
---expression :: Parsec String () (Expression, Bool)
 expression = buildExpressionParser table term
     where
         term = do
