@@ -5,7 +5,7 @@ import Control.Monad (void)
 import System.Environment (getArgs)
 import System.IO (readFile, hFlush, stdout)
 import JSBoiler.Parser (parseCode)
-import JSBoiler.Eval (evalCode, initStack)
+import JSBoiler.Eval (evalCode, initStack, showJSType)
 
 main :: IO ()
 main = do
@@ -32,7 +32,7 @@ repl = do
                     case ee of
                         Left exception -> print exception
                         Right Nothing -> return ()
-                        Right (Just result) -> print result
+                        Right (Just result) -> showJSType result >>= putStrLn
             repl' stack
 
 runFile :: String -> [String] -> IO ()

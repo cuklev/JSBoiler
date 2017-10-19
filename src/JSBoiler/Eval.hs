@@ -118,3 +118,20 @@ initStack = addScope [] $ M.fromList
     [ ("undefined", Binding { boundValue = JSUndefined, mutable = False })
     , ("NaN", Binding { boundValue = JSNumber (0 / 0), mutable = False })
     ]
+
+-- for REPL
+showJSType :: JSType -> IO String
+showJSType (JSNumber x) = return $ show x -- 4 should not be 4.0!!
+showJSType (JSString x) = return $ show x
+showJSType (JSBoolean x) = return $ if x then "true" else "false"
+showJSType JSUndefined = return "undefined"
+showJSType JSNull = return "null"
+showJSType (JSObject ref) = do
+    obj <- readIORef ref
+    let props = M.toList $ properties obj
+        enumProps = filter (\(_, p) -> enumerable p) props
+    strings <- mapM showProperty enumProps
+    return $ "{\n" ++ unlines strings ++ "}"
+
+    where
+        showProperty (k, p) = fmap (\v -> k ++ ": " ++ v ++ ",") $ showJSType $ value p
