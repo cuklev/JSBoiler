@@ -126,21 +126,25 @@ showJSType (JSString x) = return $ show x
 showJSType (JSBoolean x) = return $ if x then "true" else "false"
 showJSType JSUndefined = return "undefined"
 showJSType JSNull = return "null"
-showJSType (JSObject ref) = showObj [] ref
+showJSType (JSObject ref) = showObj 0 [] ref
     where
-        showObj parents ref
+        showObj indentLevel parents ref
             | ref `elem` parents = return "[Circular]"
             | otherwise = do
                 obj <- readIORef ref
                 let props = M.toList $ properties obj
                     enumProps = filter (\(_, p) -> enumerable p) props
-                strings <- mapM (showKeyValue (ref:parents)) enumProps
-                return $ "{\n" ++ unlines strings ++ "}"
 
-        showKeyValue parents (k, p) =
+                strings <- mapM (showKeyValue indentLevel (ref:parents)) enumProps
+                let indented = map (putIndents (indentLevel + 1)) strings
+                return $ "{\n" ++ unlines indented ++ putIndents indentLevel "}"
+
+        showKeyValue indentLevel parents (k, p) =
             let v = value p
             in toKeyValue k <$> case v of
-                JSObject ref -> showObj parents ref
+                JSObject ref -> showObj (indentLevel + 1) parents ref
                 _            -> showJSType v
 
         toKeyValue k v = k ++ ": " ++ v ++ ","
+
+        putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)
