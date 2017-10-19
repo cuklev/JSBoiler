@@ -20,7 +20,7 @@ makeFunction eval stack args statements =
             { boundThis = Nothing
             , functionScope = stack
             , argumentNames = args
-            , function = \st -> eval st statements
+            , function = (`eval` statements)
             }
         obj = Object
                 { properties = M.empty
