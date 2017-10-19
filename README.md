@@ -10,7 +10,11 @@
   - Arithmetic, logical and assignment work
 - Unary operators
 - Ternary operator
+- Loops
+  - Still no `for` loop
+  - `break` and `continue` are missing
 - Functions
+  - `return` is missing
 - ~~Objects~~
 - Arrays
 - Standard library
