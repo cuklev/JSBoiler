@@ -51,9 +51,9 @@ stringValue ref@(JSObject _) = toPrimitive ref >>= stringValue
 
 numericValue :: JSType -> IO Double
 numericValue (JSNumber x) = return x
-numericValue (JSString x) = if null x
-    then return 0
-    else case parse (jsNumber >>= \n -> eof >> return n) "" x of
+numericValue (JSString x)
+    | null x    = return 0
+    | otherwise = case parse (jsNumber >>= \n -> eof >> return n) "" x of
         Left _ -> return nAn
         Right n -> return n
 numericValue (JSBoolean x) = return $ if x then 1 else 0
