@@ -31,8 +31,9 @@ repl = do
                     ee <- (try :: IO a -> IO (Either SomeException a)) (evalCode stack statements)
                     case ee of
                         Left exception -> print exception
-                        Right Nothing -> return ()
-                        Right (Just result) -> showJSType result >>= putStrLn
+                        Right (Left _) -> error "FIXME: This should not happen"
+                        Right (Right Nothing) -> return ()
+                        Right (Right (Just result)) -> showJSType result >>= putStrLn
             repl' stack
 
 runFile :: String -> [String] -> IO ()

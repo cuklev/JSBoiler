@@ -64,9 +64,9 @@ evalExpression stack expr =
 
         _ -> error "Not implemented"
 
-evalStatement :: Stack -> Statement -> IO (Maybe JSType)
+evalStatement :: Stack -> Statement -> IO StatementResult
 evalStatement stack statement = case statement of
-    Expression x -> Just <$> evalExpression stack x
+    Expression x -> Right . Just <$> evalExpression stack x
 
     ConstDeclaration declarations -> do
         forM_ declarations $ \(decl, expr) -> do
@@ -76,7 +76,7 @@ evalStatement stack statement = case statement of
                 Nothing -> evalExpression stack expr
                             >>= declare scopeRef False decl
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
-        return Nothing
+        return $ Right Nothing
 
     LetDeclaration declarations -> do
         forM_ declarations $ \(decl, mexpr) -> do
@@ -86,7 +86,7 @@ evalStatement stack statement = case statement of
                 Nothing -> maybe (return JSUndefined) (evalExpression stack) mexpr
                             >>= declare scopeRef True decl
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
-        return Nothing
+        return $ Right Nothing
 
     BlockScope statements -> do
         newStack <- addScope stack M.empty
@@ -94,24 +94,35 @@ evalStatement stack statement = case statement of
 
     IfStatement { condition = cond, thenWhat = thenW, elseWhat = elseW } -> do
         condValue <- evalExpression stack cond >>= booleanValue
-        maybe (return Nothing) (evalStatement stack)
+        maybe (return (Right Nothing)) (evalStatement stack)
             $ if condValue then thenW else elseW
 
     WhileStatement { condition = cond, body = body } ->
-        let while = do
+        let loop = do
                 condValue <- evalExpression stack cond >>= booleanValue
                 if condValue
-                    then maybe (return Nothing) (evalStatement stack) body >> while
-                    else return Nothing
-        in while
+                    then do
+                        result <- maybe (return (Right Nothing)) (evalStatement stack) body
+                        case result of
+                            Left BreakReason -> return $ Right Nothing
+                            Left ContinueReason -> loop
+                            Left _ -> return result -- we do not handle it
+                            Right _ -> loop
+                    else return $ Right Nothing
+        in loop
+
+    BreakStatement -> return $ Left BreakReason
+    ContinueStatement -> return $ Left ContinueReason
 
     _            -> error "Not implemented"
 
-evalCode :: Stack -> [Statement] -> IO (Maybe JSType)
-evalCode stack statements = safeLast <$> mapM (evalStatement stack) statements
-    where
-        safeLast [] = Nothing
-        safeLast x = last x
+evalCode :: Stack -> [Statement] -> IO StatementResult
+evalCode _ [] = return $ Right Nothing
+evalCode stack (x:xs) = do
+    result <- evalStatement stack x
+    case result of
+        Left _ -> return result
+        Right _ -> if null xs then return result else evalCode stack xs
 
 initStack :: IO Stack
 initStack = addScope [] $ M.fromList

@@ -15,28 +15,27 @@ toObjectRef (JSObject ref) = ref
 toObjectRef _ = error "Not implemented"
 
 toPrimitive :: JSType -> IO JSType
-toPrimitive (JSObject ref) = do
-    mvalue <- tryCallAndGetPrimitive "valueOf" ref
-    case mvalue of
-        Nothing -> do
-            mstr <- tryCallAndGetPrimitive "toString" ref
-            return $ fromMaybe (error "Cannot convert object to primitive value") mstr
-        Just x -> return x
+toPrimitive (JSObject ref) =
+    let tryCall = tryCallAndGetPrimitive ref
+    in tryCall "valueOf"
+        $ tryCall "toString"
+        $ error "Cannot convert object to primitive value"
 
     where
-        tryCallAndGetPrimitive name ref = do
-            mprop <- getPropertyValue name ref
-            case mprop of
-                Just (JSObject propRef) -> do
-                    obj <- readIORef propRef
+        tryCallAndGetPrimitive ref name next = do
+            result <- getPropertyValue name ref
+            case result of
+                Nothing -> next
+                Just (JSObject ref) -> do
+                    obj <- readIORef ref
                     case getBehaviour obj of
-                        Nothing -> return Nothing
+                        Nothing -> next
                         Just func -> do
                             result <- callFunction ref func []
-                            return $ if isPrimitive result
-                                then Just result
-                                else Nothing
-                _ -> return Nothing
+                            if isPrimitive result
+                                then return result
+                                else next
+                _ -> next
 
 toPrimitive x = return x
 

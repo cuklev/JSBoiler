@@ -10,7 +10,7 @@ import JSBoiler.Type
 import JSBoiler.Eval.Binding
 
 
-makeFunction :: (Stack -> [Statement] -> IO (Maybe JSType))
+makeFunction :: (Stack -> [Statement] -> IO StatementResult)
              -> Stack
              -> [(Declaration, Maybe Expression)]
              -> [Statement]
@@ -43,7 +43,10 @@ callFunction obj func args = do
 --            ++ [("this", Binding { boundValue = this, mutable = False })]
 
     result <- function func newStack
-    return $ fromMaybe JSUndefined result
+    case result of
+        Left (ReturnReason value) -> return value
+        Right _ -> return JSUndefined
+        Left _ -> error "Should not be possible"
 
     where
         bindArgument (decl, mdefault) arg =

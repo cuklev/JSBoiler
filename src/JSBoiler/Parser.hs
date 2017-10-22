@@ -238,7 +238,19 @@ mstatement = do
              <|> try blockScope
              <|> try ifStatement
              <|> try whileStatement
+             <|> try break
+             <|> try continue
+             -- <|> try return
              <|> fmap (fmap Expression) expression
+
+        break = do
+            string "break"
+            nl <- trackNewLineSpaces
+            return (nl, BreakStatement)
+        continue = do
+            string "continue"
+            nl <- trackNewLineSpaces
+            return (nl, ContinueStatement)
 
 parseCode :: String -> Either ParseError [Statement]
 parseCode = parse statements "js"

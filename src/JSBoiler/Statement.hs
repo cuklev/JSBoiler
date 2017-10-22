@@ -13,6 +13,8 @@ data Statement = Expression Expression
                | WhileStatement { condition :: Expression
                                 , body      :: Maybe Statement
                                 }
+               | BreakStatement
+               | ContinueStatement
                deriving (Show, Eq)
 
 data Expression = LiteralNumber Double

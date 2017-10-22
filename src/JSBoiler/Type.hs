@@ -39,7 +39,7 @@ valuedProperty x = Property { value = x
 data Function = Function { boundThis :: Maybe (IORef Object)
                          , functionScope :: Stack
                          , argumentNames :: [(Declaration, Maybe Expression)]
-                         , function :: Stack -> IO (Maybe JSType)
+                         , function :: Stack -> IO StatementResult
                          }
 
 data Binding = Binding
@@ -54,3 +54,9 @@ type Stack = [IORef ScopeBindings]
 isPrimitive :: JSType -> Bool
 isPrimitive (JSObject _) = False
 isPrimitive _            = True
+
+
+type StatementResult = Either InterruptReason (Maybe JSType)
+data InterruptReason = BreakReason
+                     | ContinueReason
+                     | ReturnReason JSType
