@@ -39,7 +39,7 @@ callFunction obj func args = do
 
     newStack <- addScope (functionScope func)
             $ M.fromList
-            $ zipWith bindArgument (argumentNames func) args
+            $ zipWith bindArgument (argumentNames func) (args ++ repeat JSUndefined)
 --            ++ [("this", Binding { boundValue = this, mutable = False })]
 
     result <- function func newStack

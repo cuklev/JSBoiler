@@ -70,7 +70,7 @@ evalExpression stack expr =
                     obj <- readIORef ref
                     case behaviour obj of
                         Nothing -> error "Not a function"
-                        Just func -> callFunction ref func args
+                        Just func -> callFunction ref func args -- should plug this
                 _ -> error "Not a function"
 
         _ -> error "Not implemented"
