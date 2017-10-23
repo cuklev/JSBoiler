@@ -132,11 +132,7 @@ initStack = addScope [] $ M.fromList
 
 -- for REPL
 showJSType :: JSType -> IO String
-showJSType (JSNumber x) = return $ show x -- 4 should not be 4.0!!
 showJSType (JSString x) = return $ show x
-showJSType (JSBoolean x) = return $ if x then "true" else "false"
-showJSType JSUndefined = return "undefined"
-showJSType JSNull = return "null"
 showJSType (JSObject ref) = showObj 0 [] ref
     where
         showObj indentLevel parents ref
@@ -159,3 +155,5 @@ showJSType (JSObject ref) = showObj 0 [] ref
         toKeyValue k v = k ++ ": " ++ v ++ ","
 
         putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)
+
+showJSType x = stringValue x
