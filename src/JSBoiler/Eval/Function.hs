@@ -45,8 +45,8 @@ callFunction obj func args = do
     result <- function func newStack
     case result of
         Left (ReturnReason value) -> return value
+        Left _ -> error "FIXME: Should not be possible"
         Right _ -> return JSUndefined
-        Left _ -> error "Should not be possible"
 
     where
         bindArgument (decl, mdefault) arg =

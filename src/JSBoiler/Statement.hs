@@ -15,6 +15,7 @@ data Statement = Expression Expression
                                 }
                | BreakStatement
                | ContinueStatement
+               | ReturnStatement (Maybe Expression)
                deriving (Show, Eq)
 
 data Expression = LiteralNumber Double

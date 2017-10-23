@@ -240,7 +240,7 @@ mstatement = do
              <|> try whileStatement
              <|> try break
              <|> try continue
-             -- <|> try return
+             <|> try returnS
              <|> fmap (fmap Expression) expression
 
         break = do
@@ -251,6 +251,11 @@ mstatement = do
             string "continue"
             nl <- trackNewLineSpaces
             return (nl, ContinueStatement)
+        returnS = do -- do not shadow return
+            string "return"
+            space
+            (nl, e) <- expression
+            return (nl, ReturnStatement (Just e))
 
 parseCode :: String -> Either ParseError [Statement]
 parseCode = parse statements "js"

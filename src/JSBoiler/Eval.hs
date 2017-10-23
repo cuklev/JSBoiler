@@ -62,6 +62,17 @@ evalExpression stack expr =
             value `assignTo` x
             return value
 
+        FunctionCall argsExpr expr -> do
+            val <- eval expr
+            args <- mapM eval argsExpr
+            case val of
+                JSObject ref -> do
+                    obj <- readIORef ref
+                    case behaviour obj of
+                        Nothing -> error "Not a function"
+                        Just func -> callFunction ref func args
+                _ -> error "Not a function"
+
         _ -> error "Not implemented"
 
 evalStatement :: Stack -> Statement -> IO StatementResult
@@ -113,6 +124,9 @@ evalStatement stack statement = case statement of
 
     BreakStatement -> return $ Left BreakReason
     ContinueStatement -> return $ Left ContinueReason
+    ReturnStatement mexpr -> do
+        val <- maybe (return JSUndefined) (evalExpression stack) mexpr
+        return $ Left $ ReturnReason val
 
     _            -> error "Not implemented"
 
