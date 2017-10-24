@@ -57,6 +57,16 @@ evalExpression stack expr =
         x :/: y -> apply (>/) x y
         x :%: y -> apply (>%) x y
 
+        PrefixPlus x -> do
+            v <- eval x >>= numericValue
+            return $ JSNumber v
+        PrefixMinus x -> do
+            v <- eval x >>= numericValue
+            return $ JSNumber $ negate v
+        PrefixNot x -> do
+            v <- eval x >>= booleanValue
+            return $ JSBoolean $ not v
+
         x :&&: y -> eval x >&& eval y
         x :||: y -> eval x >|| eval y
 
