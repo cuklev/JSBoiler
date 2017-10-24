@@ -8,16 +8,24 @@
 ### TODO
 - All kinds of binary operators
   - Arithmetic, logical and assignment work
-- Unary operators
+- ~~Unary operators~~
 - Ternary operator
 - Loops
   - Still no `for` loop
-  - `break` and `continue` are missing
 - Functions
-  - `return` is missing
+  - declarations
+  - lambdas
+  - `this`
 - ~~Objects~~
-- Arrays
 - Standard library
+  - `Object`
+  - `Function`
+  - `Number`
+  - `String`
+  - `Boolean`
+  - `Array`
+  - `Math`
+  - `console`
 - Various other stuff
 - ~~**Cabal**ize~~
 - ~~Setup testing~~
