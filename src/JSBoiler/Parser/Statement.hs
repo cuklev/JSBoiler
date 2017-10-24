@@ -40,7 +40,10 @@ objectLiteral = do
 
 functionLiteral = do
     string "function"
-    spaces -- can have name, should parse
+    notFollowedBy identifierSymbol
+    spaces
+    name <- do { id <- identifier; spaces; return id } <|> return ""
+    spaces
     char '('
     spaces
     args <- decl' `sepBy` char ','
@@ -233,11 +236,3 @@ mstatement = do
             space
             (nl, e) <- expression
             return (nl, ReturnStatement (Just e))
-
-parseCode :: String -> Either ParseError [Statement]
-parseCode = parse statements "js"
-    where
-        statements = do
-            result <- nonEmptyStatements
-            eof
-            return result
