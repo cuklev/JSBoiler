@@ -30,6 +30,7 @@ library
   exposed-modules:     JSBoiler.Parser
                        JSBoiler.Parser.Identifier
                        JSBoiler.Parser.Literal
+                       JSBoiler.Parser.Statement
                        JSBoiler.Statement
                        JSBoiler.Eval
   other-modules:       JSBoiler.Type
@@ -48,9 +49,9 @@ test-suite spec
   hs-source-dirs:      tests
   main-is:             Spec.hs
   other-modules:       TestUtil
-                       JSBoiler.ParserSpec 
                        JSBoiler.Parser.IdentifierSpec
                        JSBoiler.Parser.LiteralSpec
+                       JSBoiler.Parser.StatementSpec
   build-depends:       base >=4.9 && <4.10
                      , containers >=0.5 && <0.6
                      , parsec

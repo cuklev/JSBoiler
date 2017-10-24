@@ -1,8 +1,8 @@
-module JSBoiler.ParserSpec where
+module JSBoiler.Parser.StatementSpec where
 
 import Test.Hspec
 
-import JSBoiler.Parser
+import JSBoiler.Parser.Statement
 import JSBoiler.Statement
 import TestUtil
 
@@ -16,7 +16,7 @@ spec = do
                 , "clas", "classx"
                 ]
 
-        describe "numbers" $ testParseEval (fmap snd expression)
+        describe "numbers" $ testMany (fmap snd expression)
             [ ("4",               LiteralNumber 4)
             , ("42",              LiteralNumber 42)
             , ("1.3",             LiteralNumber 1.3)

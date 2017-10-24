@@ -27,11 +27,3 @@ putSpaces (x:xs) = let rest = concat xs
                    in map (x ++) (putSpaces xs)
                        ++ [x ++ " " ++ rest]
                        ++ [x ++ "  " ++ rest]
-
-
-testParseEvalExpression p strs parsed result = describe (concat strs) $ do
-    testMany p $ putSpaces strs `allShouldBe` parsed
-    it "Evaluates correctly" $ do
-        stack <- initStack
-        actual <- evalExpression stack parsed
-        actual `shouldBe` result
