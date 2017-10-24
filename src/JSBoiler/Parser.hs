@@ -1,57 +1,19 @@
 {-# LANGUAGE FlexibleContexts #-}
 module JSBoiler.Parser where
 
-import Control.Monad (liftM2, void, join)
+import Control.Monad (void, join)
 import Data.Maybe (fromMaybe, catMaybes)
 import Text.Parsec
 import Text.Parsec.Expr
 
+import JSBoiler.Parser.Identifier
+import JSBoiler.Parser.Literal
 import JSBoiler.Statement
 
 
 trackNewLineSpaces = (endOfLine >> spaces >> return True)
                  <|> (space >> trackNewLineSpaces)
                  <|> return False
-
-jsNumber = do
-    let digits = many1 digit
-        signed x = char '-' ++: x
-               <|> (char '+' >> x)
-               <|> x
-
-        (+++) = liftM2 (++)
-        (++:) = liftM2 (:)
-
-    fmap read $ signed $ choice
-        [ digits +++ option "" (string "." +++ option "0" digits)
-        , return "0" +++ string "." +++ digits
-        ]
-        +++ option "" ((char 'e' <|> char 'E') ++: signed digits)
-
-jsString = within '"' <|> within '\'' -- must add `template strings`
-    where
-        within q = let quote = char q
-                       chars = escapedChar <|> noneOf [q]
-                   in between quote quote $ many chars
-
-        escapedChar = char '\\' >> fmap escape anyChar
-        escape x = case x of
-            '0' -> '\0'
-            'b' -> '\b'
-            'n' -> '\n'
-            'r' -> '\r'
-            't' -> '\t'
-            _   -> x    -- maybe more escapings are needed
-
-jsNull = string "null" >> notFollowedBy identifierSymbol
-
-jsBoolean = (string "false" >> notFollowedBy identifierSymbol >> return False)
-        <|> (string "true" >> notFollowedBy identifierSymbol >> return True)
-
-identifierSymbol = letter <|> digit <|> char '_' <|> char '$'
-identifier = do
-    let first = letter <|> char '_' <|> char '$'
-    liftM2 (:) first (many identifierSymbol)
 
 objectLiteral = do
     char '{'

@@ -7,51 +7,6 @@ import JSBoiler.Statement
 import TestUtil
 
 spec = do
-    describe "identifiers" $ do
-        describe "valid" $ testMany identifier
-            $ map (\x -> (x, x))
-                [ "x", "l2", "Abc"
-                , "__proto__", "OhoB0_hoU"
-                , "$", "$this", "many$"
-                ]
-
-        describe "invalid" $ testManyFail identifier
-            ["2", "+"]
-
-    describe "literals" $ do
-        describe "numbers" $ testMany jsNumber $
-            [ ("4", 4)
-            , ("42", 42)
-            ]
-            ++ allShouldBe ["0", ".0", "0.", "0.0", "+0", "+.0", "+0.", "+0.0", "-0", "-.0", "-0.", "-0.0"] 0
-            ++ allShouldBe ["1", "1.", "1.0", "+1", "+1.", "+1.0"] 1
-            ++ allShouldBe [".1", "0.1", "+.1", "+0.1"] 0.1
-            ++ allShouldBe ["-.1", "-0.1"] (-0.1)
-            ++ allShouldBe ["-1", "-1.", "-1.0"] (-1)
-            ++ allShouldBe ["1e2", "10e1", "100e0", "1000e-1", "1.e2", "10e+1", "1000.0e-1"] 100
-            ++ allShouldBe ["1.3e2", "+1.3e2", "+.13e3", "1.3E2", "+1.3E2", "+.13E3"] 130
-            ++ allShouldBe ["-.5e1", "-5.e0", "-5.0e0"] (-5)
-
-        describe "strings" $ testMany jsString
-            [ ("'string'",        "string")
-            , ("\"string\"",      "string")
-            , ("'\\0'", "\0")
-            , ("'\\n'", "\n")
-            , ("'\\r'", "\r")
-            , ("'\\t'", "\t")
-            , ("'\\b'", "\b")
-            , ("'line1\\nline2'", "line1\nline2")
-            ]
-
-        describe "null" $ testMany jsNull
-            [ ("null", ())
-            ]
-
-        describe "booleans" $ testMany jsBoolean
-            [ ("true", True)
-            , ("false", False)
-            ]
-
     describe "expressions" $ do
         describe "identifiers" $ testMany (fmap snd expression)
             $ map (\x -> (x, Identifier x))
@@ -61,7 +16,7 @@ spec = do
                 , "clas", "classx"
                 ]
 
-        describe "numbers" $ testMany (fmap snd expression)
+        describe "numbers" $ testParseEval (fmap snd expression)
             [ ("4",               LiteralNumber 4)
             , ("42",              LiteralNumber 42)
             , ("1.3",             LiteralNumber 1.3)

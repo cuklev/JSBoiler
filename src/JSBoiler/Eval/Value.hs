@@ -4,7 +4,7 @@ import Data.Maybe (fromMaybe)
 import Data.IORef
 import Text.Parsec (parse, eof)
 
-import JSBoiler.Parser (jsNumber)
+import JSBoiler.Parser.Literal (jsNumber)
 import JSBoiler.Type
 import JSBoiler.Eval.Property
 import JSBoiler.Eval.Function
