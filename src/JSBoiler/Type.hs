@@ -60,3 +60,11 @@ type StatementResult = Either InterruptReason (Maybe JSType)
 data InterruptReason = BreakReason
                      | ContinueReason
                      | ReturnReason JSType
+
+
+numberPrettyShow :: Double -> String
+numberPrettyShow x = strip $ show x
+    where 
+        strip "" = ""
+        strip ".0" = "" -- there may be a better way
+        strip (x:xs) = x : strip xs

@@ -32,6 +32,9 @@ spec = do
         describe "objects" $ testMany (fmap snd expression) $
                putSpaces ["{", "}"] `allShouldBe` LiteralObject []
             ++ putSpaces ["{", "x", ":", "3", "}"] `allShouldBe` LiteralObject [(IdentifierKey "x", LiteralNumber 3)]
+            ++ putSpaces ["{", "2", ":", "3", "}"] `allShouldBe` LiteralObject [(IdentifierKey "2", LiteralNumber 3)]
+            ++ putSpaces ["{", "2.3", ":", "3", "}"] `allShouldBe` LiteralObject [(IdentifierKey "2.3", LiteralNumber 3)]
+            ++ putSpaces ["{", "'asdf'", ":", "3", "}"] `allShouldBe` LiteralObject [(IdentifierKey "asdf", LiteralNumber 3)]
             ++ putSpaces ["{", "x", ":", "3", ",", "y", ":", "7", "}"] `allShouldBe` LiteralObject [(IdentifierKey "x", LiteralNumber 3), (IdentifierKey "y", LiteralNumber 7)]
             ++ putSpaces ["{", "x", "}"] `allShouldBe` LiteralObject [(IdentifierKey "x", Identifier "x")]
             ++ putSpaces ["{", "x", ",", "}"] `allShouldBe` LiteralObject [(IdentifierKey "x", Identifier "x")]

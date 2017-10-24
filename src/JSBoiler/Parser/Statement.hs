@@ -9,6 +9,7 @@ import Text.Parsec.Expr
 import JSBoiler.Parser.Identifier
 import JSBoiler.Parser.Literal
 import JSBoiler.Statement
+import JSBoiler.Type (numberPrettyShow)
 
 
 trackNewLineSpaces = (endOfLine >> spaces >> return True)
@@ -23,7 +24,7 @@ objectLiteral = do
     return $ LiteralObject props
 
     where
-        property = between spaces spaces (expressionKey <|> identKey)
+        property = between spaces spaces (expressionKey <|> stringNumberKey <|> identKey)
         expressionKey = do
             char '['
             key <- fmap snd expression
@@ -32,8 +33,14 @@ objectLiteral = do
             char ':'
             value <- fmap snd expression
             return (ExpressionKey key, value)
+        stringNumberKey = do
+            key <- (jsString <|> fmap numberPrettyShow jsNumber)
+            spaces
+            char ':'
+            value <- fmap snd expression
+            return (IdentifierKey key, value)
         identKey = do
-            key <- identifier -- TODO: handle numbers
+            key <- identifier
             spaces
             value <- option (Identifier key) (char ':' >> fmap snd expression)
             return (IdentifierKey key, value)

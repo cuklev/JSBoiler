@@ -41,12 +41,7 @@ toPrimitive x = return x
 
 
 stringValue :: JSType -> IO String
-stringValue (JSNumber x) =
-    let str = show x
-        strip "" = ""
-        strip ".0" = "" -- there may be a better way
-        strip (x:xs) = x : strip xs
-    in return $ strip str
+stringValue (JSNumber x) = return $ numberPrettyShow x
 stringValue (JSString x) = return x
 stringValue (JSBoolean x) = return $ if x then "true" else "false"
 stringValue JSUndefined = return "undefined"
