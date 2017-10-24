@@ -124,6 +124,13 @@ spec = do
             ++ putSpaces ["4", "+", "7", "*", "2"] `allShouldBe` (LiteralNumber 4 :+: (LiteralNumber 7 :*: LiteralNumber 2))
             ++ putSpaces ["(", "4", "+", "7", ")", "*", "2"] `allShouldBe` ((LiteralNumber 4 :+: LiteralNumber 7) :*: LiteralNumber 2)
 
+        describe "prefix" $ testMany (fmap snd expression) $
+               putSpaces ["+", "7"] `allShouldBe` PrefixPlus (LiteralNumber 7)
+            ++ putSpaces ["-", "7"] `allShouldBe` PrefixMinus (LiteralNumber 7)
+            ++ putSpaces ["!", "7"] `allShouldBe` PrefixNot (LiteralNumber 7)
+            ++ putSpaces ["~", "7"] `allShouldBe` PrefixTilde (LiteralNumber 7)
+            ++ putSpaces ["+", "-", "!", "~", "7"] `allShouldBe` PrefixPlus (PrefixMinus (PrefixNot (PrefixTilde (LiteralNumber 7.0))))
+
         describe "logical" $ testMany (fmap snd expression) $
                putSpaces ["3", "&&", "7"] `allShouldBe` (LiteralNumber 3 :&&: LiteralNumber 7)
             ++ putSpaces ["3", "||", "7"] `allShouldBe` (LiteralNumber 3 :||: LiteralNumber 7)

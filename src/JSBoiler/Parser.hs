@@ -117,6 +117,7 @@ expression = buildExpressionParser table term
             return (nl, t)
 
         table = [ [Postfix chainPostfixOperations]
+                , [Prefix chainPrefixOperations]
                 , [binaryOperator "*" (:*:) AssocLeft, binaryOperator "/" (:/:) AssocLeft, binaryOperator "%" (:%:) AssocLeft]
                 , [binaryOperator "+" (:+:) AssocLeft, binaryOperator "-" (:-:) AssocLeft]
                 , [binaryOperator "&&" (:&&:) AssocLeft, binaryOperator "||" (:||:) AssocLeft]
@@ -143,9 +144,23 @@ expression = buildExpressionParser table term
             ps <- many postfixOperations
             return $ \e -> foldl (\(_, e) (nl, p) -> (nl, p e)) e ps
 
+        prefixPlus = char '+' >> spaces >> return PrefixPlus
+        prefixMinus = char '-' >> spaces >> return PrefixMinus
+        prefixNot = char '!' >> spaces >> return PrefixNot
+        prefixTilde = char '~' >> spaces >> return PrefixTilde
+
+        prefixOperations = prefixPlus
+                       <|> prefixMinus
+                       <|> prefixNot
+                       <|> prefixTilde
+
+        chainPrefixOperations = do
+            ps <- many prefixOperations
+            return $ \(nl, e) -> (nl, foldr ($) e ps)
+
         assign (Identifier l) r = LValueBinding l :=: r
         assign (PropertyOf prop expr) r = LValueProperty prop expr :=: r
-        assign _              _ = error "Invalid left-hand assignment"
+        assign _ _ = error "Invalid left-hand assignment"
 
         assignModify f l r = assign l $ f l r
 
