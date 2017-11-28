@@ -40,8 +40,8 @@ library
                        JSBoiler.Eval.Property
                        JSBoiler.Eval.Value
   -- other-extensions:
-  build-depends:       base >=4.9 && <4.10
-                     , containers >=0.5 && <0.6
+  build-depends:       base
+                     , containers
                      , parsec
 
 test-suite spec
