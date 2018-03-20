@@ -3,7 +3,7 @@ module JSBoiler.Eval where
 import Control.Monad (liftM2, forM_)
 import Data.Maybe (fromMaybe)
 import Data.IORef
-import qualified Data.Map.Strict as M
+import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type

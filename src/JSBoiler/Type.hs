@@ -1,8 +1,8 @@
 module JSBoiler.Type where
 
 import Data.IORef
-import Data.Map.Strict (Map)
-import qualified Data.Map.Strict as M
+import Data.HashMap.Strict (HashMap)
+import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
 
@@ -14,7 +14,7 @@ data JSType = JSNumber Double
             | JSNull
             | JSObject (IORef Object)
 
-data Object = Object { properties :: Map String Property
+data Object = Object { properties :: HashMap String Property
                      , behaviour :: Maybe Function
                      , prototype :: Maybe Object
                      }
@@ -47,7 +47,7 @@ data Binding = Binding
     , mutable :: Bool
     }
 
-type ScopeBindings = Map String Binding
+type ScopeBindings = HashMap String Binding
 type Stack = [IORef ScopeBindings]
 
 

@@ -12,7 +12,7 @@ dependencies:
 library:
   source-dirs: src
   dependencies:
-  - containers
+  - unordered-containers
   - parsec
 
 executables:
@@ -27,7 +27,6 @@ tests:
     source-dirs: test
     main: Spec.hs
     dependencies:
-    - containers
     - parsec
     - hspec
     - JSBoiler

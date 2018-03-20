@@ -3,7 +3,7 @@ module JSBoiler.Eval.Function where
 import Control.Applicative ((<|>))
 import Data.Maybe (fromMaybe)
 import Data.IORef
-import qualified Data.Map.Strict as M
+import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type
