@@ -1,0 +1,37 @@
+name: JSBoiler
+version: 0.1.0.0
+license: GPL-3
+license-file: LICENSE
+author: Kristiyan Tsaklev
+maintainer: cuki@cukii.me
+category: Language
+
+dependencies:
+- base
+
+library:
+  source-dirs: src
+  dependencies:
+  - containers
+  - parsec
+
+executables:
+  boiler:
+    main: Main.hs
+    source-dirs: app
+    dependencies:
+    - JSBoiler
+
+tests:
+  boiler-tests:
+    source-dirs: test
+    main: Spec.hs
+    dependencies:
+    - containers
+    - parsec
+    - hspec
+    - JSBoiler
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N

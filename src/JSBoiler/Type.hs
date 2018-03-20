@@ -64,7 +64,7 @@ data InterruptReason = BreakReason
 
 numberPrettyShow :: Double -> String
 numberPrettyShow x = strip $ show x
-    where 
+    where
         strip "" = ""
         strip ".0" = "" -- there may be a better way
         strip (x:xs) = x : strip xs
