@@ -34,7 +34,7 @@ objectLiteral = do
             value <- fmap snd expression
             return (ExpressionKey key, value)
         stringNumberKey = do
-            key <- (jsString <|> fmap numberPrettyShow jsNumber)
+            key <- jsString <|> fmap numberPrettyShow jsNumber
             spaces
             char ':'
             value <- fmap snd expression
