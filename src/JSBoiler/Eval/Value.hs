@@ -15,14 +15,12 @@ toObjectRef (JSObject ref) = ref
 toObjectRef _ = error "Not implemented"
 
 toPrimitive :: JSType -> IO JSType
-toPrimitive (JSObject ref) =
-    let tryCall = tryCallAndGetPrimitive ref
-    in tryCall "valueOf"
-        $ tryCall "toString"
-        $ error "Cannot convert object to primitive value"
+toPrimitive (JSObject ref) = tryCall "valueOf"
+                                $ tryCall "toString"
+                                $ error "Cannot convert object to primitive value"
 
     where
-        tryCallAndGetPrimitive ref name next = do
+        tryCall name next = do
             result <- getPropertyValue name ref
             case result of
                 Nothing -> next
