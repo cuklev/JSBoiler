@@ -182,5 +182,4 @@ showJSType (JSObject ref) = showObj 0 [] ref
         toKeyValue k v = k ++ ": " ++ v ++ ","
 
         putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)
-
 showJSType x = stringValue x
