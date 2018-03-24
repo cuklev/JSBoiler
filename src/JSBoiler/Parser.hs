@@ -9,8 +9,4 @@ import JSBoiler.Statement
 
 parseCode :: String -> Either ParseError [Statement]
 parseCode = parse statements "js"
-    where
-        statements = do
-            result <- nonEmptyStatements
-            eof
-            return result
+    where statements = nonEmptyStatements <* eof
