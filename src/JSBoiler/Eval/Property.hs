@@ -10,11 +10,10 @@ import JSBoiler.Eval.Function
 
 
 getProperty :: String -> Object -> Maybe Property
-getProperty name obj =
-    let own = M.lookup name $ properties obj
-    in case own of
+getProperty name obj = case own of
         Nothing -> prototype obj >>= getProperty name
         Just prop -> own
+    where own = M.lookup name $ properties obj
 
 getPropertyValue :: String -> IORef Object -> IO (Maybe JSType)
 getPropertyValue name ref = do
@@ -28,9 +27,8 @@ getPropertyValue name ref = do
 
 
 setProperty :: String -> Property -> Object -> Object
-setProperty name prop obj =
-    let m = M.insert name prop $ properties obj
-    in obj { properties = m }
+setProperty name prop obj = obj { properties = ps }
+    where ps = M.insert name prop $ properties obj
 
 setPropertyValue :: String -> IORef Object -> JSType -> IO ()
 setPropertyValue name ref value = do
@@ -46,7 +44,7 @@ setPropertyValue name ref value = do
             Just func -> void (callFunction ref func [val])
 
     case mprop of
-        Nothing ->
+        Nothing -> do
             let props' = M.insert name Property
                      { value = value
                      , writeable = True
@@ -56,17 +54,16 @@ setPropertyValue name ref value = do
                      , set = Nothing
                      } props
                 obj' = obj { properties = props' }
-            in writeIORef ref obj'
+            writeIORef ref obj'
         Just prop -> setValue prop value
 
 
 makeObject :: [(String, JSType)] -> IO JSType
-makeObject pairs =
-    let props = map toProperty pairs
+makeObject pairs = JSObject <$> newIORef obj
+    where
+        toProperty = fmap valuedProperty
+        props = map toProperty pairs
         obj = Object { properties = M.fromList props
                      , behaviour = Nothing
                      , prototype = Nothing -- should be Object.prototype
                      }
-    in JSObject <$> newIORef obj
-
-    where toProperty = fmap valuedProperty

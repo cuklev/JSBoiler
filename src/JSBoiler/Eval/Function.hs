@@ -15,8 +15,9 @@ makeFunction :: (Stack -> [Statement] -> IO StatementResult)
              -> [(Declaration, Maybe Expression)]
              -> [Statement]
              -> IO JSType
-makeFunction eval stack args statements =
-    let func = Function
+makeFunction eval stack args statements = JSObject <$> newIORef obj
+    where
+        func = Function
             { boundThis = Nothing
             , functionScope = stack
             , argumentNames = args
@@ -27,7 +28,6 @@ makeFunction eval stack args statements =
                 , behaviour = Just func
                 , prototype = Nothing -- Should be Function.prototype
                 }
-    in JSObject <$> newIORef obj
 
 
 getBehaviour :: Object -> Maybe Function

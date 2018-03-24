@@ -18,12 +18,13 @@ checkForAlreadyDeclared scope (DeclareBinding name)
     | otherwise           = Nothing
 
 declare :: IORef ScopeBindings -> Bool -> Declaration -> JSType -> IO ()
-declare scopeRef mut (DeclareBinding name) value =
-    let binding = Binding
+declare scopeRef mut (DeclareBinding name) value = modifyIORef' scopeRef $ M.insert name binding
+    where
+        binding = Binding
             { boundValue = value
             , mutable = mut
             }
-    in modifyIORef' scopeRef $ M.insert name binding
+
 declare scopeRef mut _ _ = error "Not implemented" -- implement destructuring
 
 getBindingValue :: String -> Stack -> IO (Maybe JSType)

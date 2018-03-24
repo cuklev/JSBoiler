@@ -15,23 +15,7 @@ import JSBoiler.Eval.Function
 
 
 evalExpression :: Stack -> Expression -> IO JSType
-evalExpression stack expr =
-    let eval = evalExpression stack
-        apply f x y = do
-            vx <- eval x
-            vy <- eval y
-            f vx vy
-        assignTo value (LValueBinding name) = setBindingValue name value stack
-        assignTo value (LValueProperty key expr) = do
-                            name <- getKeyName key
-                            ref <- toObjectRef <$> eval expr
-                            setPropertyValue name ref value
-        assignTo _ _ = error "Not implemented"
-
-        getKeyName (IdentifierKey x) = return x
-        getKeyName (ExpressionKey x) = eval x >>= stringValue
-
-    in case expr of
+evalExpression stack expr = case expr of
         LiteralNumber x  -> return $ JSNumber x
         LiteralString x  -> return $ JSString x
         LiteralBoolean x -> return $ JSBoolean x
@@ -87,6 +71,22 @@ evalExpression stack expr =
                 _ -> error "Not a function"
 
         _ -> error "Not implemented"
+    where
+        eval = evalExpression stack
+        apply f x y = do
+            vx <- eval x
+            vy <- eval y
+            f vx vy
+        assignTo value (LValueBinding name) = setBindingValue name value stack
+        assignTo value (LValueProperty key expr) = do
+                            name <- getKeyName key
+                            ref <- toObjectRef <$> eval expr
+                            setPropertyValue name ref value
+        assignTo _ _ = error "Not implemented"
+
+        getKeyName (IdentifierKey x) = return x
+        getKeyName (ExpressionKey x) = eval x >>= stringValue
+
 
 evalStatement :: Stack -> Statement -> IO StatementResult
 evalStatement stack statement = case statement of
