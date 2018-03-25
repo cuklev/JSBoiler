@@ -20,11 +20,9 @@ checkForAlreadyDeclared scope (DeclareBinding name)
 declare :: IORef ScopeBindings -> Bool -> Declaration -> JSType -> IO ()
 declare scopeRef mut (DeclareBinding name) value = modifyIORef' scopeRef $ M.insert name binding
     where
-        binding = Binding
-            { boundValue = value
-            , mutable = mut
-            }
-
+        binding = Binding { boundValue = value
+                          , mutable = mut
+                          }
 declare scopeRef mut _ _ = error "Not implemented" -- implement destructuring
 
 getBindingValue :: String -> Stack -> IO (Maybe JSType)
@@ -35,7 +33,6 @@ getBindingValue name (s:ss) = do
     case local of
         Nothing -> getBindingValue name ss
         _ -> return $ fmap boundValue local
-
 
 setBindingValue :: String -> JSType -> Stack -> IO ()
 setBindingValue name _ [] = error $ name ++ " is not defined"

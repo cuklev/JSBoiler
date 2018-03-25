@@ -42,10 +42,9 @@ data Function = Function { boundThis :: Maybe (IORef Object)
                          , function :: Stack -> IO StatementResult
                          }
 
-data Binding = Binding
-    { boundValue :: JSType
-    , mutable :: Bool
-    }
+data Binding = Binding { boundValue :: JSType
+                       , mutable :: Bool
+                       }
 
 type ScopeBindings = HashMap String Binding
 type Stack = [IORef ScopeBindings]

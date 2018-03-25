@@ -41,15 +41,9 @@ evalExpression stack expr = case expr of
         x :/: y -> apply (>/) x y
         x :%: y -> apply (>%) x y
 
-        PrefixPlus x -> do
-            v <- eval x >>= numericValue
-            return $ JSNumber v
-        PrefixMinus x -> do
-            v <- eval x >>= numericValue
-            return $ JSNumber $ negate v
-        PrefixNot x -> do
-            v <- eval x >>= booleanValue
-            return $ JSBoolean $ not v
+        PrefixPlus x -> JSNumber <$> (eval x >>= numericValue)
+        PrefixMinus x -> JSNumber . negate <$> (eval x >>= numericValue)
+        PrefixNot x -> JSBoolean . not <$> (eval x >>= booleanValue)
 
         x :&&: y -> eval x >&& eval y
         x :||: y -> eval x >|| eval y
@@ -149,7 +143,8 @@ evalCode stack (x:xs) = do
     result <- evalStatement stack x
     case result of
         Left _ -> return result
-        Right _ -> if null xs then return result else evalCode stack xs
+        Right _ -> if null xs then return result
+                              else evalCode stack xs
 
 initStack :: IO Stack
 initStack = addScope [] $ M.fromList
