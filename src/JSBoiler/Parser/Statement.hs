@@ -49,7 +49,7 @@ functionLiteral = do
     string "function"
     notFollowedBy identifierSymbol
     spaces
-    name <- do { id <- identifier; spaces; return id } <|> return ""
+    name <- (identifier <* spaces) <|> return ""
     spaces
     char '('
     spaces
