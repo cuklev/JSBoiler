@@ -1,8 +1,10 @@
 module JSBoiler.Type where
 
-import Data.IORef
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.State.Strict
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
+import Data.IORef
 
 import JSBoiler.Statement
 
@@ -42,23 +44,10 @@ data Function = Function { boundThis :: Maybe (IORef Object)
                          , function :: Stack -> IO StatementResult
                          }
 
-data Binding = Binding { boundValue :: JSType
-                       , mutable :: Bool
-                       }
-
-type ScopeBindings = HashMap String Binding
-type Stack = [IORef ScopeBindings]
-
 
 isPrimitive :: JSType -> Bool
 isPrimitive (JSObject _) = False
 isPrimitive _            = True
-
-
-type StatementResult = Either InterruptReason (Maybe JSType)
-data InterruptReason = BreakReason
-                     | ContinueReason
-                     | ReturnReason JSType
 
 
 numberPrettyShow :: Double -> String
@@ -67,3 +56,29 @@ numberPrettyShow x = strip $ show x
         strip "" = ""
         strip ".0" = "" -- there may be a better way
         strip (x:xs) = x : strip xs
+
+
+data Binding = Binding { boundValue :: JSType
+                       , mutable :: Bool
+                       }
+
+type ScopeBindings = HashMap String Binding
+type Stack = [IORef ScopeBindings]
+
+data InterruptReason = BreakReason
+                     | ContinueReason
+                     | ReturnReason JSType
+                     | ThrowReason JSType
+
+newtype JSBoiler a = JSBoiler { runBoiler :: ExceptT InterruptReason (StateT Stack IO) a }
+
+instance Functor JSBoiler where
+    fmap f = JSBoiler . fmap f . runBoiler
+
+instance Applicative JSBoiler where
+    pure = JSBoiler . return
+    x <*> y = JSBoiler $ runBoiler x <*> runBoiler y
+
+instance Monad JSBoiler where
+    return = pure
+    x >>= f = JSBoiler $ runBoiler x >>= runBoiler . f
