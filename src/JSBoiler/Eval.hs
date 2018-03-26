@@ -1,6 +1,7 @@
 module JSBoiler.Eval where
 
-import Control.Monad (liftM2, forM_)
+import Control.Monad (liftM2, forM_, when, void, foldM)
+import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromMaybe)
 import Data.IORef
 import qualified Data.HashMap.Strict as M
@@ -14,24 +15,24 @@ import JSBoiler.Eval.Value
 import JSBoiler.Eval.Function
 
 
-evalExpression :: Stack -> Expression -> IO JSType
-evalExpression stack expr = case expr of
+evalExpression :: Expression -> JSBoiler JSType
+evalExpression expr = case expr of
         LiteralNumber x  -> return $ JSNumber x
         LiteralString x  -> return $ JSString x
         LiteralBoolean x -> return $ JSBoolean x
         LiteralNull      -> return JSNull
 
-        LiteralObject x  -> mapM (\(k, v) -> liftM2 (,) (getKeyName k) (eval v)) x
+        LiteralObject x  -> mapM (\(k, v) -> liftM2 (,) (getKeyName k) (evalExpression v)) x
                                 >>= makeObject
 
-        LiteralFunction args statements -> makeFunction evalCode stack args statements
+        LiteralFunction args statements -> makeFunction evalCode args statements
 
-        Identifier x     -> getBindingValue x stack
+        Identifier x     -> getBindingValue x
                                 >>= maybe (error $ x ++ " is not defined") return
 
         key `PropertyOf` x -> do
             name <- getKeyName key
-            vx <- eval x
+            vx <- evalExpression x
             let ref = toObjectRef vx
             fromMaybe JSUndefined <$> getPropertyValue name ref
 
@@ -41,24 +42,24 @@ evalExpression stack expr = case expr of
         x :/: y -> apply (>/) x y
         x :%: y -> apply (>%) x y
 
-        PrefixPlus x -> JSNumber <$> (eval x >>= numericValue)
-        PrefixMinus x -> JSNumber . negate <$> (eval x >>= numericValue)
-        PrefixNot x -> JSBoolean . not <$> (eval x >>= booleanValue)
+        PrefixPlus x -> JSNumber <$> (evalExpression x >>= numericValue)
+        PrefixMinus x -> JSNumber . negate <$> (evalExpression x >>= numericValue)
+        PrefixNot x -> JSBoolean . not <$> (evalExpression x >>= booleanValue)
 
-        x :&&: y -> eval x >&& eval y
-        x :||: y -> eval x >|| eval y
+        x :&&: y -> evalExpression x >&& evalExpression y
+        x :||: y -> evalExpression x >|| evalExpression y
 
         x :=: y -> do
-            value <- eval y
+            value <- evalExpression y
             value `assignTo` x
             return value
 
         FunctionCall argsExpr expr -> do
-            val <- eval expr
-            args <- mapM eval argsExpr
+            val <- evalExpression expr
+            args <- mapM evalExpression argsExpr
             case val of
                 JSObject ref -> do
-                    obj <- readIORef ref
+                    obj <- liftIO $ readIORef ref
                     case behaviour obj of
                         Nothing -> error "Not a function"
                         Just func -> callFunction ref func args -- should plug this
@@ -66,101 +67,86 @@ evalExpression stack expr = case expr of
 
         _ -> error "Not implemented"
     where
-        eval = evalExpression stack
         apply f x y = do
-            vx <- eval x
-            vy <- eval y
+            vx <- evalExpression x
+            vy <- evalExpression y
             f vx vy
-        assignTo value (LValueBinding name) = setBindingValue name value stack
+        assignTo value (LValueBinding name) = setBindingValue name value
         assignTo value (LValueProperty key expr) = do
                             name <- getKeyName key
-                            ref <- toObjectRef <$> eval expr
+                            ref <- toObjectRef <$> evalExpression expr
                             setPropertyValue name ref value
         assignTo _ _ = error "Not implemented"
 
         getKeyName (IdentifierKey x) = return x
-        getKeyName (ExpressionKey x) = eval x >>= stringValue
+        getKeyName (ExpressionKey x) = evalExpression x >>= stringValue
 
 
-evalStatement :: Stack -> Statement -> IO StatementResult
-evalStatement stack statement = case statement of
-    Expression x -> Right . Just <$> evalExpression stack x
+evalStatement :: Statement -> JSBoiler (Maybe JSType)
+evalStatement statement = case statement of
+    Expression x -> Just <$> evalExpression x
 
     ConstDeclaration declarations -> do
         forM_ declarations $ \(decl, expr) -> do
-            let scopeRef = head stack
-            scope <- readIORef scopeRef
+            (scopeRef:_) <- getStack
+            scope <- liftIO $ readIORef scopeRef
             case checkForAlreadyDeclared scope decl of
-                Nothing -> evalExpression stack expr
-                            >>= declare scopeRef False decl
+                Nothing -> evalExpression expr
+                            >>= declare False decl
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
-        return $ Right Nothing
+        return Nothing
 
     LetDeclaration declarations -> do
         forM_ declarations $ \(decl, mexpr) -> do
-            let scopeRef = head stack
-            scope <- readIORef scopeRef
+            (scopeRef:_) <- getStack
+            scope <- liftIO $ readIORef scopeRef
             case checkForAlreadyDeclared scope decl of
-                Nothing -> maybe (return JSUndefined) (evalExpression stack) mexpr
-                            >>= declare scopeRef True decl
+                Nothing -> maybe (return JSUndefined) evalExpression mexpr
+                            >>= declare True decl
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
-        return $ Right Nothing
+        return Nothing
 
     BlockScope statements -> do
-        newStack <- addScope stack M.empty
-        evalCode newStack statements
+        pushStack M.empty
+        evalCode statements
 
     IfStatement { condition = cond, thenWhat = thenW, elseWhat = elseW } -> do
-        condValue <- evalExpression stack cond >>= booleanValue
-        maybe (return (Right Nothing)) (evalStatement stack)
+        condValue <- evalExpression cond >>= booleanValue
+        maybe (return Nothing) evalStatement
             $ if condValue then thenW else elseW
 
     WhileStatement { condition = cond, body = body } ->
         let loop = do
-                condValue <- evalExpression stack cond >>= booleanValue
-                if condValue
-                    then do
-                        result <- maybe (return (Right Nothing)) (evalStatement stack) body
-                        case result of
-                            Left BreakReason -> return $ Right Nothing
-                            Left ContinueReason -> loop
-                            Left _ -> return result -- we do not handle it
-                            Right _ -> loop
-                    else return $ Right Nothing
-        in loop
+                condValue <- evalExpression cond >>= booleanValue
+                when condValue $ do
+                    should <- shouldContinueLoop $ void $ maybe (return Nothing) evalStatement body
+                    when should loop
+        in loop >> return Nothing
 
-    BreakStatement -> return $ Left BreakReason
-    ContinueStatement -> return $ Left ContinueReason
+    BreakStatement -> do
+        jsBreak
+        return Nothing
+    ContinueStatement -> do
+        jsContinue
+        return Nothing
     ReturnStatement mexpr -> do
-        val <- maybe (return JSUndefined) (evalExpression stack) mexpr
-        return $ Left $ ReturnReason val
+        value <- maybe (return JSUndefined) evalExpression mexpr
+        jsReturn value
+        return Nothing
 
     _            -> error "Not implemented"
 
-evalCode :: Stack -> [Statement] -> IO StatementResult
-evalCode _ [] = return $ Right Nothing
-evalCode stack (x:xs) = do
-    result <- evalStatement stack x
-    case result of
-        Left _ -> return result
-        Right _ -> if null xs then return result
-                              else evalCode stack xs
-
-initStack :: IO Stack
-initStack = addScope [] $ M.fromList
-    [ ("undefined", Binding { boundValue = JSUndefined, mutable = False })
-    , ("NaN", Binding { boundValue = JSNumber (0 / 0), mutable = False })
-    ]
+evalCode :: [Statement] -> JSBoiler (Maybe JSType)
+evalCode = foldM (const evalStatement) Nothing
 
 -- for REPL
-showJSType :: JSType -> IO String
-showJSType (JSString x) = return $ show x
+showJSType :: JSType -> JSBoiler String
 showJSType (JSObject ref) = showObj 0 [] ref
     where
         showObj indentLevel parents ref
             | ref `elem` parents = return "[Circular]"
             | otherwise = do
-                obj <- readIORef ref
+                obj <- liftIO $ readIORef ref
                 let props = M.toList $ properties obj
                     enumProps = filter (\(_, p) -> enumerable p) props
 
@@ -177,4 +163,5 @@ showJSType (JSObject ref) = showObj 0 [] ref
         toKeyValue k v = k ++ ": " ++ v ++ ","
 
         putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)
+showJSType (JSString x) = return $ show x
 showJSType x = stringValue x

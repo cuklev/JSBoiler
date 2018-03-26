@@ -12,7 +12,7 @@ applyNumeric f x y = do
     ny <- numericValue y
     return $ f nx ny
 
-(>+) :: JSType -> JSType -> IO JSType
+(>+) :: JSType -> JSType -> JSBoiler JSType
 x >+ y = do
     px <- toPrimitive x
     py <- toPrimitive y
@@ -23,7 +23,7 @@ x >+ y = do
                 JSString stry -> JSString . (++ stry) <$> stringValue px
                 _ -> JSNumber <$> applyNumeric (+) px py
 
-(>-), (>*), (>/), (>%) :: JSType -> JSType -> IO JSType
+(>-), (>*), (>/), (>%) :: JSType -> JSType -> JSBoiler JSType
 x >- y = JSNumber <$> applyNumeric (-) x y
 x >* y = JSNumber <$> applyNumeric (*) x y
 x >/ y = JSNumber <$> applyNumeric (/) x y
@@ -31,7 +31,7 @@ x >/ y = JSNumber <$> applyNumeric (/) x y
 x >% y = JSNumber <$> applyNumeric (\nx ny -> nx - ny * fromIntegral (floor $ nx / ny)) x y
 
 -- IO JSType for short circuit behaviour
-(>&&), (>||) :: IO JSType -> IO JSType -> IO JSType
+(>&&), (>||) :: JSBoiler JSType -> JSBoiler JSType -> JSBoiler JSType
 x >&& y = do
     vx <- x
     bx <- booleanValue vx

@@ -1,6 +1,7 @@
 module JSBoiler.Eval.Property where
 
 import Control.Monad (void)
+import Control.Monad.IO.Class (liftIO)
 import Data.IORef
 import qualified Data.HashMap.Strict as M
 
@@ -15,11 +16,11 @@ getProperty name obj = case own of
         Just prop -> own
     where own = M.lookup name $ properties obj
 
-getPropertyValue :: String -> IORef Object -> IO (Maybe JSType)
+getPropertyValue :: String -> IORef Object -> JSBoiler (Maybe JSType)
 getPropertyValue name ref = do
-    obj <- readIORef ref
+    obj <- liftIO $ readIORef ref
     let mprop = getProperty name obj
-        getValue prop = case get prop of
+        getValue prop = case getter prop of
             Nothing -> return $ value prop
             Just func -> callFunction ref func []
 
@@ -30,16 +31,16 @@ setProperty :: String -> Property -> Object -> Object
 setProperty name prop obj = obj { properties = ps }
     where ps = M.insert name prop $ properties obj
 
-setPropertyValue :: String -> IORef Object -> JSType -> IO ()
+setPropertyValue :: String -> IORef Object -> JSType -> JSBoiler ()
 setPropertyValue name ref value = do
-    obj <- readIORef ref
+    obj <- liftIO $ readIORef ref
     let props = properties obj
         mprop = M.lookup name props
-        setValue prop val = case set prop of
+        setValue prop val = case setter prop of
             Nothing -> if writeable prop
                             then let props' = M.insert name (prop { value = val }) props
                                      obj' = obj { properties = props' }
-                                 in writeIORef ref obj'
+                                 in liftIO $ writeIORef ref obj'
                             else error $ "Cannot assign to read only property '" ++ name ++ "'"
             Just func -> void (callFunction ref func [val])
 
@@ -50,16 +51,16 @@ setPropertyValue name ref value = do
                      , writeable = True
                      , enumerable = True
                      , configurable = True
-                     , get = Nothing
-                     , set = Nothing
+                     , getter = Nothing
+                     , setter = Nothing
                      } props
                 obj' = obj { properties = props' }
-            writeIORef ref obj'
+            liftIO $ writeIORef ref obj'
         Just prop -> setValue prop value
 
 
-makeObject :: [(String, JSType)] -> IO JSType
-makeObject pairs = JSObject <$> newIORef obj
+makeObject :: [(String, JSType)] -> JSBoiler JSType
+makeObject pairs = liftIO $ JSObject <$> newIORef obj
     where
         toProperty = fmap valuedProperty
         props = map toProperty pairs

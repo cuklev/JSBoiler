@@ -1,5 +1,6 @@
 module JSBoiler.Eval.Binding where
 
+import Control.Monad.IO.Class (liftIO)
 import Data.IORef
 import qualified Data.HashMap.Strict as M
 
@@ -7,42 +8,35 @@ import JSBoiler.Statement
 import JSBoiler.Type
 
 
-addScope :: Stack -> ScopeBindings -> IO Stack
-addScope stack bindings = do
-    scope <- newIORef bindings
-    return $ scope : stack
-
 checkForAlreadyDeclared :: ScopeBindings -> Declaration -> Maybe String
 checkForAlreadyDeclared scope (DeclareBinding name)
     | M.member name scope = Just name
     | otherwise           = Nothing
 
-declare :: IORef ScopeBindings -> Bool -> Declaration -> JSType -> IO ()
-declare scopeRef mut (DeclareBinding name) value = modifyIORef' scopeRef $ M.insert name binding
-    where
-        binding = Binding { boundValue = value
-                          , mutable = mut
-                          }
-declare scopeRef mut _ _ = error "Not implemented" -- implement destructuring
+declare :: Bool -> Declaration -> JSType -> JSBoiler ()
+declare mut (DeclareBinding name) value = do
+    (s:_) <- getStack
+    liftIO $ modifyIORef' s $ M.insert name Binding { boundValue = value
+                                                    , mutable = mut
+                                                    }
+declare mut _ _ = error "Destructuring not implemented"
 
-getBindingValue :: String -> Stack -> IO (Maybe JSType)
-getBindingValue _ [] = return Nothing
-getBindingValue name (s:ss) = do
-    scope <- readIORef s
-    let local = M.lookup name scope
-    case local of
-        Nothing -> getBindingValue name ss
-        _ -> return $ fmap boundValue local
+getBindingValue :: String -> JSBoiler (Maybe JSType)
+getBindingValue name = getStack >>= liftIO . findBinding
+    where findBinding [] = return Nothing
+          findBinding (s:ss) = do
+            scope <- readIORef s
+            case M.lookup name scope of
+                Nothing -> findBinding ss
+                Just x -> return $ Just $ boundValue x
 
-setBindingValue :: String -> JSType -> Stack -> IO ()
-setBindingValue name _ [] = error $ name ++ " is not defined"
-setBindingValue name value (s:ss) = do
-    scope <- readIORef s
-    case M.lookup name scope of
-        Nothing -> setBindingValue name value ss
-        Just b -> if mutable b
-                    then do
-                        let b' = b { boundValue = value }
-                            scope' = M.insert name b' scope
-                        writeIORef s scope'
-                    else error $ "Cannot assign to constant variable " ++ name
+setBindingValue :: String -> JSType -> JSBoiler ()
+setBindingValue name value = getStack >>= liftIO . setBinding
+    where setBinding [] = error $ name ++ "is not declared, but must throw JS exception"
+          setBinding (s:ss) = do
+            scope <- readIORef s
+            case M.lookup name scope of
+                Nothing -> setBinding ss
+                Just b -> if mutable b then let b' = b { boundValue = value } 
+                                            in writeIORef s $ M.insert name b' scope
+                                       else error $ name ++ " is declared const, but must throw JS exception"

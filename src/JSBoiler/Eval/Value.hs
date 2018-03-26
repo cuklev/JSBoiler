@@ -1,5 +1,6 @@
 module JSBoiler.Eval.Value where
 
+import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromMaybe)
 import Data.IORef
 import Text.Parsec (parse, eof)
@@ -14,7 +15,7 @@ toObjectRef :: JSType -> IORef Object
 toObjectRef (JSObject ref) = ref
 toObjectRef _ = error "Not implemented"
 
-toPrimitive :: JSType -> IO JSType
+toPrimitive :: JSType -> JSBoiler JSType
 toPrimitive (JSObject ref) = tryCall "valueOf"
                                 $ tryCall "toString"
                                 $ error "Cannot convert object to primitive value"
@@ -25,7 +26,7 @@ toPrimitive (JSObject ref) = tryCall "valueOf"
             case result of
                 Nothing -> next
                 Just (JSObject ref) -> do
-                    obj <- readIORef ref
+                    obj <- liftIO $ readIORef ref
                     case getBehaviour obj of
                         Nothing -> next
                         Just func -> do
@@ -38,7 +39,7 @@ toPrimitive (JSObject ref) = tryCall "valueOf"
 toPrimitive x = return x
 
 
-stringValue :: JSType -> IO String
+stringValue :: JSType -> JSBoiler String
 stringValue (JSNumber x) = return $ numberPrettyShow x
 stringValue (JSString x) = return x
 stringValue (JSBoolean x) = return $ if x then "true" else "false"
@@ -46,7 +47,7 @@ stringValue JSUndefined = return "undefined"
 stringValue JSNull = return "null"
 stringValue ref@(JSObject _) = toPrimitive ref >>= stringValue
 
-numericValue :: JSType -> IO Double
+numericValue :: JSType -> JSBoiler Double
 numericValue (JSNumber x) = return x
 numericValue (JSString x)
     | null x    = return 0
@@ -58,7 +59,7 @@ numericValue JSUndefined = return nAn
 numericValue JSNull = return 0
 numericValue ref@(JSObject _) = toPrimitive ref >>= numericValue
 
-booleanValue :: JSType -> IO Bool
+booleanValue :: JSType -> JSBoiler Bool
 booleanValue (JSNumber x) = return $ x /= 0 -- Hope this works
 booleanValue (JSString x) = return $ not $ null x
 booleanValue (JSBoolean x) = return x

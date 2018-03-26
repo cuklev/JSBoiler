@@ -1,11 +1,12 @@
 module Main where
 
-import Control.Exception (try, SomeException)
-import Control.Monad (void)
+import Control.Exception (catch, SomeException)
+import Control.Monad (void, forever)
 import System.Environment (getArgs)
 import System.IO (readFile, hFlush, stdout)
 import JSBoiler.Parser (parseCode)
-import JSBoiler.Eval (evalCode, initStack, showJSType)
+import JSBoiler.Eval (evalCode, showJSType)
+import JSBoiler.Type (evalBoiler, initStack)
 
 main :: IO ()
 main = do
@@ -15,33 +16,27 @@ main = do
         (file:params) -> runFile file params
 
 repl :: IO ()
-repl = do
-    stack <- initStack
-    repl' stack
+repl = initStack >>= \stack -> forever $ do
+    putStr "> "
+    hFlush stdout
+    line <- getLine
 
-    where
-        repl' stack = do
-            putStr "> "
-            hFlush stdout
-            line <- getLine
-            -- catch exceptions if evalCode is nasty
-            case parseCode line of
-                Left err -> print err
-                Right statements -> do
-                    ee <- (try :: IO a -> IO (Either SomeException a)) (evalCode stack statements)
-                    case ee of
-                        Left exception -> print exception
-                        Right (Left _) -> error "FIXME: This should not happen"
-                        Right (Right Nothing) -> return ()
-                        Right (Right (Just result)) -> showJSType result >>= putStrLn
-            repl' stack
+    case parseCode line of
+        Left err -> print err
+        Right statements -> do
+            let boiler = evalCode statements
+                            >>= maybe (return Nothing) (\x -> Just <$> showJSType x)
+                feedback = do
+                    mresult <- evalBoiler stack boiler
+                    maybe (return ()) putStrLn mresult
+            feedback `catch` \e -> print (e :: SomeException)
 
 runFile :: String -> [String] -> IO ()
 runFile file args = do
-    code <- readFile file
     stack <- initStack
+    code <- readFile file
     -- do something with args
     -- maybe put them in something global
     case parseCode code of
         Left err -> print err
-        Right statements -> void $ evalCode stack statements
+        Right statements -> void $ evalBoiler stack $ evalCode statements
