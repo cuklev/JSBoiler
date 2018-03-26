@@ -25,7 +25,7 @@ repl = initStack >>= \stack -> forever $ do
         Left err -> print err
         Right statements -> do
             let boiler = evalCode statements
-                            >>= maybe (return Nothing) (\x -> Just <$> showJSType x)
+                            >>= maybe (return Nothing) (fmap Just . showJSType)
                 feedback = do
                     mresult <- evalBoiler stack boiler
                     maybe (return ()) putStrLn mresult
