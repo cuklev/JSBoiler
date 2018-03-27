@@ -16,9 +16,10 @@ checkForAlreadyDeclared scope (DeclareBinding name)
 declare :: Bool -> Declaration -> JSType -> JSBoiler ()
 declare mut (DeclareBinding name) value = do
     (s:_) <- getStack
-    liftIO $ modifyIORef' s $ M.insert name Binding { boundValue = value
-                                                    , mutable = mut
-                                                    }
+    liftIO $ modifyIORef' s
+           $ M.insert name Binding { boundValue = value
+                                   , mutable = mut
+                                   }
 declare mut _ _ = error "Destructuring not implemented"
 
 getBindingValue :: String -> JSBoiler (Maybe JSType)
