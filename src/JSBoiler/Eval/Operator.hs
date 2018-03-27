@@ -10,10 +10,9 @@ import JSBoiler.Eval.Function
 import JSBoiler.Eval.Value
 
 
-applyNumeric f x y = do
-    nx <- numericValue x
-    ny <- numericValue y
-    return $ f nx ny
+applyNumeric :: (Double -> Double -> a) -> JSType -> JSType -> JSBoiler a
+applyNumeric f x y = f <$> numericValue x
+                       <*> numericValue y
 
 (>+) :: JSType -> JSType -> JSBoiler JSType
 x >+ y = do
