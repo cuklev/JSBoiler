@@ -1,4 +1,7 @@
-module JSBoiler.Eval.Operator where
+module JSBoiler.Eval.Operator
+    ( (>+), (>-), (>*), (>/), (>%)
+    , (>&&), (>||)
+    ) where
 
 import JSBoiler.Type
 import JSBoiler.Statement
