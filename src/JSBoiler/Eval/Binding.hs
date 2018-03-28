@@ -32,12 +32,12 @@ getBindingValue name = getStack >>= liftIO . findBinding
                 Just x -> return $ Just $ boundValue x
 
 setBindingValue :: String -> JSType -> JSBoiler ()
-setBindingValue name value = getStack >>= liftIO . setBinding
+setBindingValue name value = getStack >>= setBinding
     where setBinding [] = jsThrow $ JSString $ name ++ "is not declared"
           setBinding (s:ss) = do
-            scope <- readIORef s
+            scope <- liftIO $ readIORef s
             case M.lookup name scope of
                 Nothing -> setBinding ss
                 Just b -> if mutable b then let b' = b { boundValue = value } 
-                                            in writeIORef s $ M.insert name b' scope
+                                            in liftIO $ writeIORef s $ M.insert name b' scope
                                        else jsThrow $ JSString $ name ++ " is declared const, but must throw JS exception"
