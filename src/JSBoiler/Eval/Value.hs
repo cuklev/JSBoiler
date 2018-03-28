@@ -18,8 +18,7 @@ toObjectRef _ = error "Not implemented"
 toPrimitive :: JSType -> JSBoiler JSType
 toPrimitive (JSObject ref) = tryCall "valueOf"
                                 $ tryCall "toString"
-                                $ error "Cannot convert object to primitive value"
-
+                                $ jsThrow $ JSString "Cannot convert object to primitive value"
     where
         tryCall name next = do
             result <- getPropertyValue name ref

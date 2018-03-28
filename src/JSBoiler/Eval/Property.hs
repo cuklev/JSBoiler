@@ -41,7 +41,7 @@ setPropertyValue name ref value = do
                             then let props' = M.insert name (prop { value = val }) props
                                      obj' = obj { properties = props' }
                                  in liftIO $ writeIORef ref obj'
-                            else error $ "Cannot assign to read only property '" ++ name ++ "'"
+                            else jsThrow $ JSString $ "Cannot assign to read only property '" ++ name ++ "'"
             Just func -> void (callFunction ref func [val])
 
     case mprop of

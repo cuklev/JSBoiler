@@ -28,7 +28,7 @@ evalExpression expr = case expr of
         LiteralFunction args statements -> makeFunction evalCode args statements
 
         Identifier x     -> getBindingValue x
-                                >>= maybe (error $ x ++ " is not defined") return
+                                >>= maybe (jsThrow $ JSString $ x ++ " is not defined") return
 
         key `PropertyOf` x -> do
             name <- getKeyName key
@@ -61,9 +61,9 @@ evalExpression expr = case expr of
                 JSObject ref -> do
                     obj <- liftIO $ readIORef ref
                     case behaviour obj of
-                        Nothing -> error "Not a function"
+                        Nothing -> jsThrow $ JSString "Not a function"
                         Just func -> callFunction ref func args -- should plug this
-                _ -> error "Not a function"
+                _ -> jsThrow $ JSString "Not a function"
 
         _ -> error "Not implemented"
     where
@@ -93,7 +93,7 @@ evalStatement statement = case statement of
             case checkForAlreadyDeclared scope decl of
                 Nothing -> evalExpression expr
                             >>= declare False decl
-                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
+                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared" -- should be Syntax error
         return Nothing
 
     LetDeclaration declarations -> do
@@ -103,7 +103,7 @@ evalStatement statement = case statement of
             case checkForAlreadyDeclared scope decl of
                 Nothing -> maybe (return JSUndefined) evalExpression mexpr
                             >>= declare True decl
-                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared"
+                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared" -- should be Syntax error
         return Nothing
 
     BlockScope statements -> do
