@@ -7,6 +7,7 @@ import System.IO (readFile, hFlush, stdout)
 import JSBoiler.Parser (parseCode)
 import JSBoiler.Eval (evalCode, showJSType)
 import JSBoiler.Type (evalBoiler, initStack)
+import JSBoiler.Quasi
 
 main :: IO ()
 main = do

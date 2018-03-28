@@ -50,7 +50,6 @@ data Expression = LiteralNumber Double
                 -- assignment
                 | LValue :=: Expression
 
-                -- | FunctionCall Expression [Expression] -- ()
                 -- | New Expression [Expression] -- new :(
                 deriving (Show, Eq)
 

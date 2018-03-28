@@ -15,6 +15,7 @@ library:
   - unordered-containers
   - parsec
   - transformers
+  - template-haskell
 
 executables:
   boiler:
