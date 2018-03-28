@@ -144,8 +144,8 @@ jsContinue = JSBoiler $ throwE InterruptContinue
 jsReturn :: JSType -> JSBoiler ()
 jsReturn = JSBoiler . throwE . InterruptReturn
 
-jsThrow :: JSType -> JSBoiler ()
-jsThrow = JSBoiler . throwE . InterruptThrow
+jsThrow :: JSType -> JSBoiler a
+jsThrow = (undefined <*) . JSBoiler . throwE . InterruptThrow
 
 initStack :: IO Stack
 initStack = do
