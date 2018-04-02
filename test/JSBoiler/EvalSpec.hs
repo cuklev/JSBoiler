@@ -39,3 +39,15 @@ spec = do
                 $ [jsEval|true|] `shouldEvalTo` JSBoolean True
             it "false"
                 $ [jsEval|false|] `shouldEvalTo` JSBoolean False
+        describe "Strings" $ do
+            it "''"
+                $ [jsEval|''|] `shouldEvalTo` JSString ""
+            it "\"\""
+                $ [jsEval|""|] `shouldEvalTo` JSString ""
+            it "'single'"
+                $ [jsEval|''|] `shouldEvalTo` JSString ""
+            it "\"double\""
+                $ [jsEval|""|] `shouldEvalTo` JSString ""
+            it "'escapings\\n \\' \\\" \\\\'"
+                $ [jsEval|'escapings\n \' \" \\'|] `shouldEvalTo` JSString "escapings\n \' \" \\"
+        it "null" $ [jsEval|null|] `shouldEvalTo` JSNull
