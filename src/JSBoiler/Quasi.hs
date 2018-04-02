@@ -4,6 +4,7 @@
 module JSBoiler.Quasi
     ( jsExpr
     , jsCode
+    , jsEval
     ) where
 
 import Language.Haskell.TH.Lib (ExpQ)
@@ -30,3 +31,12 @@ jsExpr = QuasiQuoter { quoteExp = qRight . fmap snd . parse expression "" }
 
 jsCode :: QuasiQuoter
 jsCode = QuasiQuoter { quoteExp = qRight . parseCode }
+
+jsEval :: QuasiQuoter
+jsEval = QuasiQuoter { quoteExp = eqRight . parseCode }
+    where eqRight (Left x) = error $ show x
+          --eqRight (Right x) = [| initStack >>= flip evalBoiler $ evalCode x |]
+          eqRight (Right x) = [| do
+                                    stack <- initStack
+                                    evalBoiler stack $ evalCode x
+                                |]
