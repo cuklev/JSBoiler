@@ -18,8 +18,8 @@ deriving instance Show JSType
 instance Show (IORef Object) where
     show _ = "Object {...}"
 
-expectResult :: IO (Maybe JSType) -> JSType -> IO ()
-expectResult action exp = do
+shouldEvalTo :: IO (Maybe JSType) -> JSType -> IO ()
+shouldEvalTo action exp = do
     r <- action
     case r of
         Nothing -> error "No result"
@@ -29,8 +29,13 @@ spec = do
     describe "Literals" $ do
         describe "Numbers" $ do
             it "positive integer number"
-                $ [jsEval|42|] `expectResult` JSNumber 42
+                $ [jsEval|42|] `shouldEvalTo` JSNumber 42
             it "negative integer number"
-                $ [jsEval|-9|] `expectResult` JSNumber (-9)
+                $ [jsEval|-9|] `shouldEvalTo` JSNumber (-9)
             it "rational number"
-                $ [jsEval|24.13|] `expectResult` JSNumber 24.13
+                $ [jsEval|24.13|] `shouldEvalTo` JSNumber 24.13
+        describe "Boolean" $ do
+            it "true"
+                $ [jsEval|true|] `shouldEvalTo` JSBoolean True
+            it "false"
+                $ [jsEval|false|] `shouldEvalTo` JSBoolean False
