@@ -75,3 +75,10 @@ spec = do
         it "3 || 5" $ [jsEval|3 || 5|] `shouldEvalTo` JSNumber 3
         it "null || 5" $ [jsEval|null || 5|] `shouldEvalTo` JSNumber 5
         it "false || 0" $ [jsEval|false || 0|] `shouldEvalTo` JSNumber 0
+
+    describe "Declarations" $ do
+        it "let x = 5" $ [jsEval|let x = 5; x|] `shouldEvalTo` JSNumber 5
+        it "let x" $ [jsEval|let x; x|] `shouldEvalTo` JSUndefined
+        it "const x = 5" $ [jsEval|const x = 5; x|] `shouldEvalTo` JSNumber 5
+        it "const x = 5, y = 3" $ [jsEval|const x = 5, y = 3; x + y|] `shouldEvalTo` JSNumber 8
+        it "changing let declaration" $ [jsEval|let x = 5; x = 6; x|] `shouldEvalTo` JSNumber 6
