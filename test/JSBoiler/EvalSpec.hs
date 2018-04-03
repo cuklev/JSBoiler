@@ -62,3 +62,16 @@ spec = do
         it "string / string" $ [jsEval|'11' * '13'|] `shouldEvalTo` JSNumber 143
         it "string * string" $ [jsEval|'16' / '4'|] `shouldEvalTo` JSNumber 4
         it "string % string" $ [jsEval|'37' % '7'|] `shouldEvalTo` JSNumber 2
+
+    describe "Logical" $ do
+        it "!number" $ [jsEval|!0.3|] `shouldEvalTo` JSBoolean False
+        it "!bool" $ [jsEval|!false|] `shouldEvalTo` JSBoolean True
+        it "!string" $ [jsEval|!'kek'|] `shouldEvalTo` JSBoolean False
+
+        it "3 && 5" $ [jsEval|3 && 5|] `shouldEvalTo` JSNumber 5
+        it "null && 5" $ [jsEval|null && 5|] `shouldEvalTo` JSNull
+        it "3 && false" $ [jsEval|3 && false|] `shouldEvalTo` JSBoolean False
+
+        it "3 || 5" $ [jsEval|3 || 5|] `shouldEvalTo` JSNumber 3
+        it "null || 5" $ [jsEval|null || 5|] `shouldEvalTo` JSNumber 5
+        it "false || 0" $ [jsEval|false || 0|] `shouldEvalTo` JSNumber 0
