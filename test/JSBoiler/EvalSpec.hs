@@ -82,3 +82,14 @@ spec = do
         it "const x = 5" $ [jsEval|const x = 5; x|] `shouldEvalTo` JSNumber 5
         it "const x = 5, y = 3" $ [jsEval|const x = 5, y = 3; x + y|] `shouldEvalTo` JSNumber 8
         it "changing let declaration" $ [jsEval|let x = 5; x = 6; x|] `shouldEvalTo` JSNumber 6
+
+    describe "if()s" $ do
+        it "if true" $ [jsEval|let x = 0; if(true) x = 1|] `shouldEvalTo` JSNumber 1
+        it "if false" $ [jsEval|let x = 0; if(false) x = 1; x|] `shouldEvalTo` JSNumber 0
+        it "if true else" $ [jsEval|let x = 0; if(true) x = 1; else x = 2|] `shouldEvalTo` JSNumber 1
+        it "if false else" $ [jsEval|let x = 0; if(false) x = 1; else x = 2|] `shouldEvalTo` JSNumber 2
+
+    describe "while()s" $ do
+        it "while" $ [jsEval|let x = 5, y = ''; while(x) { y += x; x -= 1; } y|] `shouldEvalTo` JSString "54321"
+        it "using break" $ [jsEval|let x = 5, y = ''; while(1) { y += x; if(!(x - 3)) break; x -= 1; } y|] `shouldEvalTo` JSString "543"
+        it "using continue" $ [jsEval|let x = 5, y = ''; while(x) { y += x; if(!(x - 3)) {x-=1;continue;} x -= 1; } y|] `shouldEvalTo` JSNumber 1
