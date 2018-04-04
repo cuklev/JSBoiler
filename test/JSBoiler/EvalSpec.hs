@@ -92,4 +92,4 @@ spec = do
     describe "while()s" $ do
         it "while" $ [jsEval|let x = 5, y = ''; while(x) { y += x; x -= 1; } y|] `shouldEvalTo` JSString "54321"
         it "using break" $ [jsEval|let x = 5, y = ''; while(1) { y += x; if(!(x - 3)) break; x -= 1; } y|] `shouldEvalTo` JSString "543"
-        it "using continue" $ [jsEval|let x = 5, y = ''; while(x) { y += x; if(!(x - 3)) {x-=1;continue;} x -= 1; } y|] `shouldEvalTo` JSNumber 1
+        it "using continue" $ [jsEval|let x = 5, y = ''; while(x) { if(!(x - 3)) {x-=1;continue;} y += x; x -= 1; } y|] `shouldEvalTo` JSString "5421"
