@@ -164,6 +164,7 @@ spec = do
             ++ putSpaces ["if", "(", "null", ")", "{", "}", "else ", "x = 6"] `allShouldBe` Just IfStatement { condition = LiteralNull, thenWhat = Just (BlockScope []), elseWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 6)) }
             ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "{", "}"] `allShouldBe` Just IfStatement { condition = LiteralNull, thenWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 5)), elseWhat = Just (BlockScope []) }
             ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "{", "}"] `allShouldBe` Just IfStatement { condition = LiteralNull, thenWhat = Just (BlockScope []), elseWhat = Just (BlockScope []) }
+            ++ putSpaces ["if", "(", "x", ")", ";"] `allShouldBe` Just (IfStatement {condition = Identifier "x", thenWhat = Nothing, elseWhat = Nothing})
 
         describe "while statement" $ testMany mstatement $
                putSpaces ["while", "(", "null", ")", "x = 5"] `allShouldBe` Just WhileStatement { condition = LiteralNull, body = Just (Expression (LValueBinding "x" :=: LiteralNumber 5)) }
