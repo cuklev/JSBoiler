@@ -49,6 +49,7 @@ spec = do
         it "number * number" $ [jsEval|16 / 4|] `shouldEvalTo` JSNumber 4
         it "number % number" $ [jsEval|37 % 7|] `shouldEvalTo` JSNumber 2
 
+        it "+empty string" $ [jsEval|+''|] `shouldEvalTo` JSNumber 0
         it "+string" $ [jsEval|+'42'|] `shouldEvalTo` JSNumber 42
         it "+bool" $ [jsEval|+true|] `shouldEvalTo` JSNumber 1
         it "+null" $ [jsEval|+null|] `shouldEvalTo` JSNumber 0
@@ -93,3 +94,10 @@ spec = do
         it "while" $ [jsEval|let x = 5, y = ''; while(x) { y += x; x -= 1; } y|] `shouldEvalTo` JSString "54321"
         it "using break" $ [jsEval|let x = 5, y = ''; while(1) { y += x; if(!(x - 3)) break; x -= 1; } y|] `shouldEvalTo` JSString "543"
         it "using continue" $ [jsEval|let x = 5, y = ''; while(x) { if(!(x - 3)) {x-=1;continue;} y += x; x -= 1; } y|] `shouldEvalTo` JSString "5421"
+
+    describe "objects" $ do
+        it "undefined property" $ [jsEval|let x = {}; x.asdf|] `shouldEvalTo` JSUndefined
+        it "with property" $ [jsEval| let x = {asdf: 5}; x.asdf|] `shouldEvalTo` JSNumber 5
+        it "with key" $ [jsEval| let x = {['a' + 7]: 5}; x.a7|] `shouldEvalTo` JSNumber 5
+        it "assign property" $ [jsEval| let x = {}; x.asdf = 5; x.asdf|] `shouldEvalTo` JSNumber 5
+        it "assign key" $ [jsEval| let x = {}; x['a7']=5; x.a7|] `shouldEvalTo` JSNumber 5
