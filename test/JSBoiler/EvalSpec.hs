@@ -95,9 +95,15 @@ spec = do
         it "using break" $ [jsEval|let x = 5, y = ''; while(1) { y += x; if(!(x - 3)) break; x -= 1; } y|] `shouldEvalTo` JSString "543"
         it "using continue" $ [jsEval|let x = 5, y = ''; while(x) { if(!(x - 3)) {x-=1;continue;} y += x; x -= 1; } y|] `shouldEvalTo` JSString "5421"
 
-    describe "objects" $ do
+    describe "Objects" $ do
         it "undefined property" $ [jsEval|let x = {}; x.asdf|] `shouldEvalTo` JSUndefined
         it "with property" $ [jsEval| let x = {asdf: 5}; x.asdf|] `shouldEvalTo` JSNumber 5
         it "with key" $ [jsEval| let x = {['a' + 7]: 5}; x.a7|] `shouldEvalTo` JSNumber 5
         it "assign property" $ [jsEval| let x = {}; x.asdf = 5; x.asdf|] `shouldEvalTo` JSNumber 5
         it "assign key" $ [jsEval| let x = {}; x['a7']=5; x.a7|] `shouldEvalTo` JSNumber 5
+
+    describe "Functions" $ do
+        it "Returns value" $ [jsEval|const f = function(){return 4;}; f()|] `shouldEvalTo` JSNumber 4
+        it "Returns argument" $ [jsEval|const f = function(x){return x;}; f(4)|] `shouldEvalTo` JSNumber 4
+        it "Returns something with arguments" $ [jsEval|const f = function(x, y){return x + y;}; f(4, 5)|] `shouldEvalTo` JSNumber 9
+        it "Some recursion" $ [jsEval|const f = function(x) {return x && (x-1) && (f(x-1) + f(x-2)) || 1;}; f(10)|] `shouldEvalTo` JSNumber 89
