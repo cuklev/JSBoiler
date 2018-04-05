@@ -1,4 +1,8 @@
-module JSBoiler.Eval.Property where
+module JSBoiler.Eval.Property
+    ( getPropertyValue
+    , setPropertyValue
+    , makeObject
+    ) where
 
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
@@ -38,8 +42,7 @@ setPropertyValue name ref value = do
         mprop = M.lookup name props
         setValue prop val = case setter prop of
             Nothing -> if writeable prop
-                            then let props' = M.insert name (prop { value = val }) props
-                                     obj' = obj { properties = props' }
+                            then let obj' = setProperty name (prop { value = val }) obj
                                  in liftIO $ writeIORef ref obj'
                             else jsThrow $ JSString $ "Cannot assign to read only property '" ++ name ++ "'"
             Just func -> void (callFunction ref func [val])
