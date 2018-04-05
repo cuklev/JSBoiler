@@ -101,6 +101,8 @@ spec = do
         it "with key" $ [jsEval| let x = {['a' + 7]: 5}; x.a7|] `shouldEvalTo` JSNumber 5
         it "assign property" $ [jsEval| let x = {}; x.asdf = 5; x.asdf|] `shouldEvalTo` JSNumber 5
         it "assign key" $ [jsEval| let x = {}; x['a7']=5; x.a7|] `shouldEvalTo` JSNumber 5
+        it "reassign property" $ [jsEval| let x = {asdf: false}; x.asdf =5; x.asdf|] `shouldEvalTo` JSNumber 5
+        it "reassign key" $ [jsEval| let x = {a7: null}; x['a7']=5; x.a7|] `shouldEvalTo` JSNumber 5
 
     describe "Functions" $ do
         it "Returns value" $ [jsEval|const f = function(){return 4;}; f()|] `shouldEvalTo` JSNumber 4
