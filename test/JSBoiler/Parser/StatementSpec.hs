@@ -165,7 +165,10 @@ spec = do
             ++ putSpaces ["if", "(", "null", ")", "x = 5;", "else", "{", "}"] `allShouldBe` Just IfStatement { condition = LiteralNull, thenWhat = Just (Expression (LValueBinding "x" :=: LiteralNumber 5)), elseWhat = Just (BlockScope []) }
             ++ putSpaces ["if", "(", "null", ")", "{", "}", "else", "{", "}"] `allShouldBe` Just IfStatement { condition = LiteralNull, thenWhat = Just (BlockScope []), elseWhat = Just (BlockScope []) }
             ++ putSpaces ["if", "(", "x", ")", ";"] `allShouldBe` Just (IfStatement {condition = Identifier "x", thenWhat = Nothing, elseWhat = Nothing})
+            ++ putSpaces ["if", "(", "!", "x", ")", ";"] `allShouldBe` Just (IfStatement {condition = PrefixNot (Identifier "x"), thenWhat = Nothing, elseWhat = Nothing})
 
         describe "while statement" $ testMany mstatement $
                putSpaces ["while", "(", "null", ")", "x = 5"] `allShouldBe` Just WhileStatement { condition = LiteralNull, body = Just (Expression (LValueBinding "x" :=: LiteralNumber 5)) }
             ++ putSpaces ["while", "(", "null", ")", "{", "}"] `allShouldBe` Just WhileStatement { condition = LiteralNull, body = Just (BlockScope []) }
+            ++ putSpaces ["while", "(", "x", ")", ";"] `allShouldBe` Just (WhileStatement {condition = Identifier "x", body = Nothing})
+            ++ putSpaces ["while", "(", "!", "x", ")", ";"] `allShouldBe` Just (WhileStatement {condition = PrefixNot (Identifier "x"), body = Nothing})
