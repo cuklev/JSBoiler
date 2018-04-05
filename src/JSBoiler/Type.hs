@@ -11,7 +11,7 @@ module JSBoiler.Type
     , Stack
     , JSBoiler
     , getStack
-    , setStack
+    , substiteStack
     , pushStack
     , getReturnValue
     , shouldContinueLoop
@@ -26,7 +26,7 @@ module JSBoiler.Type
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
-import Control.Monad.Trans.State.Strict
+import Control.Monad.Trans.Reader
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import Data.IORef
@@ -66,7 +66,7 @@ valuedProperty x = Property { value = x
 data Function = Function { boundThis :: Maybe (IORef Object)
                          , functionScope :: Stack
                          , argumentNames :: [(Declaration, Maybe Expression)]
-                         , function :: JSBoiler JSType
+                         , function :: JSBoiler ()
                          }
 
 
@@ -95,7 +95,7 @@ data InterruptReason = InterruptBreak
                      | InterruptReturn JSType
                      | InterruptThrow JSType
 
-newtype JSBoiler a = JSBoiler { runBoiler :: ExceptT InterruptReason (StateT Stack IO) a }
+newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Stack (ExceptT InterruptReason IO) a }
 
 instance Functor JSBoiler where
     fmap f = JSBoiler . fmap f . runBoiler
@@ -112,40 +112,44 @@ instance MonadIO JSBoiler where
     liftIO = JSBoiler . lift . lift
 
 getStack :: JSBoiler Stack
-getStack = JSBoiler $ lift get
+getStack = JSBoiler ask
 
-setStack :: Stack -> JSBoiler ()
-setStack = JSBoiler . lift . put
+substiteStack :: Stack -> JSBoiler a -> JSBoiler a
+substiteStack stack = JSBoiler . local (const stack) . runBoiler
 
-pushStack :: ScopeBindings -> JSBoiler ()
-pushStack bindings = do
+pushStack :: ScopeBindings -> JSBoiler a -> JSBoiler a
+pushStack bindings block = do
     ref <- liftIO $ newIORef bindings
-    JSBoiler $ lift $ modify (ref:)
+    JSBoiler $ local (ref:) $ runBoiler block
+
+mapExceptBoiler :: (Either InterruptReason a -> Either InterruptReason b) -> JSBoiler a -> JSBoiler b
+mapExceptBoiler f boiler = JSBoiler $ ReaderT $ \stack -> mapExceptT (fmap f)
+                                              $ runReaderT (runBoiler boiler) stack
 
 getReturnValue :: JSBoiler () -> JSBoiler JSType
-getReturnValue = JSBoiler . mapExceptT (fmap get) . runBoiler
+getReturnValue = mapExceptBoiler get
     where get (Left (InterruptReturn x)) = Right x
           get (Left x)                = Left x
           get (Right _)               = Right JSUndefined
 
 shouldContinueLoop :: JSBoiler () -> JSBoiler Bool
-shouldContinueLoop = JSBoiler . mapExceptT (fmap get) . runBoiler
+shouldContinueLoop = mapExceptBoiler get
     where get (Left InterruptBreak)    = Right False
           get (Left InterruptContinue) = Right True
           get (Left x)              = Left x
           get (Right _)             = Right True
 
 jsBreak :: JSBoiler ()
-jsBreak = JSBoiler $ throwE InterruptBreak
+jsBreak = JSBoiler $ lift $ throwE InterruptBreak
 
 jsContinue :: JSBoiler ()
-jsContinue = JSBoiler $ throwE InterruptContinue
+jsContinue = JSBoiler $ lift $ throwE InterruptContinue
 
 jsReturn :: JSType -> JSBoiler ()
-jsReturn = JSBoiler . throwE . InterruptReturn
+jsReturn = JSBoiler . lift . throwE . InterruptReturn
 
 jsThrow :: JSType -> JSBoiler a
-jsThrow = (return undefined <*) . JSBoiler . throwE . InterruptThrow
+jsThrow = (>> return undefined) . JSBoiler . lift . throwE . InterruptThrow
 
 initStack :: IO Stack
 initStack = do
@@ -158,7 +162,7 @@ initStack = do
 
 evalBoiler :: Stack -> JSBoiler a -> IO a
 evalBoiler stack boiler = do
-    result <- evalStateT (runExceptT $ runBoiler boiler) stack
+    result <- runExceptT $ runReaderT (runBoiler boiler) stack
     case result of
         Left (InterruptThrow _) -> error "Uncaught JS exception"
         Left _                  -> error "Something else was uncaught"

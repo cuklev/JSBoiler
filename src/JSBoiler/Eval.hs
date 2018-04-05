@@ -106,9 +106,7 @@ evalStatement statement = case statement of
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared" -- should be Syntax error
         return Nothing
 
-    BlockScope statements -> do
-        pushStack M.empty
-        evalCode statements
+    BlockScope statements -> pushStack M.empty $ evalCode statements
 
     IfStatement { condition = cond, thenWhat = thenW, elseWhat = elseW } -> do
         condValue <- evalExpression cond >>= booleanValue
