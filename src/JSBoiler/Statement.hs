@@ -58,10 +58,11 @@ data PropertyKey = IdentifierKey String
                  deriving (Show, Eq)
 
 data Declaration = DeclareBinding String
-                 -- Extend to support destructuring
+                 | DeclareDestructObject [Declaration] (Maybe String)
+                 | DeclareDestructIterable [Maybe Declaration] (Maybe String)
                  deriving (Show, Eq)
 
 data LValue = LValueBinding String
             | LValueProperty Expression PropertyKey
-            -- Extend to support destructuring
+            | LValueDestructIterable [Maybe Declaration] (Maybe String)
             deriving (Show, Eq)
