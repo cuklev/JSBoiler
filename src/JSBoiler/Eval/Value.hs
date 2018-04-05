@@ -1,7 +1,6 @@
 module JSBoiler.Eval.Value where
 
 import Control.Monad.IO.Class (liftIO)
-import Data.Maybe (fromMaybe)
 import Data.IORef
 import Text.Parsec (parse, eof)
 
@@ -21,15 +20,15 @@ toPrimitive (JSObject ref) = tryCall "valueOf"
                                 $ jsThrow $ JSString "Cannot convert object to primitive value"
     where
         tryCall name next = do
-            result <- getPropertyValue name ref
-            case result of
+            mprop <- getPropertyValue name ref
+            case mprop of
                 Nothing -> next
-                Just (JSObject ref) -> do
-                    obj <- liftIO $ readIORef ref
+                Just (JSObject ref') -> do
+                    obj <- liftIO $ readIORef ref'
                     case getBehaviour obj of
                         Nothing -> next
                         Just func -> do
-                            result <- callFunction ref func []
+                            result <- callFunction ref' func []
                             if isPrimitive result
                                 then return result
                                 else next

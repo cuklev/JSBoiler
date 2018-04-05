@@ -9,7 +9,6 @@ import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type
-import JSBoiler.Eval.Binding
 
 
 makeFunction :: ([Statement] -> JSBoiler a)
@@ -45,9 +44,9 @@ callFunction obj func args = getReturnValue $ do
     where
         bindArgument (decl, mdefault) arg =
             let name = case decl of
-                    DeclareBinding name -> name
-                    _                   -> error "Destructuring is not implemented"
+                    DeclareBinding x -> x
+                    _              -> error "Destructuring is not implemented yet"
                 value = case arg of
-                    JSUndefined -> maybe JSUndefined (error "Default parameter value not implemented yet") mdefault
+                    JSUndefined -> maybe JSUndefined (error "Default parameter value is not implemented yet") mdefault
                     x           -> x
             in (name, Binding { boundValue = value, mutable = True })

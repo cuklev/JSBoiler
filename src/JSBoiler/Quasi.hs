@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell    #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE DeriveLift         #-}
+{-# OPTIONS_GHC -fno-warn-missing-fields -Wno-orphans #-}
 module JSBoiler.Quasi
     ( jsExpr
     , jsCode
@@ -22,6 +23,7 @@ deriving instance Lift PropertyKey
 deriving instance Lift Declaration
 deriving instance Lift LValue
 
+
 qRight :: (Show a, Lift b) => Either a b -> ExpQ
 qRight (Left x) = error $ show x
 qRight (Right x) = [|x|]
@@ -35,8 +37,6 @@ jsCode = QuasiQuoter { quoteExp = qRight . parseCode }
 jsEval :: QuasiQuoter
 jsEval = QuasiQuoter { quoteExp = eqRight . parseCode }
     where eqRight (Left x) = error $ show x
-          --eqRight (Right x) = [| initStack >>= flip evalBoiler $ evalCode x |]
-          eqRight (Right x) = [| do
-                                    stack <- initStack
+          eqRight (Right x) = [| do stack <- initStack
                                     evalBoiler stack $ evalCode x
-                                |]
+                              |]

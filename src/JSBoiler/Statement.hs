@@ -11,7 +11,7 @@ data Statement = Expression Expression
                              , elseWhat  :: Maybe Statement
                              }
                | WhileStatement { condition :: Expression
-                                , body      :: Maybe Statement
+                                , whileBody :: Maybe Statement
                                 }
                | BreakStatement
                | ContinueStatement

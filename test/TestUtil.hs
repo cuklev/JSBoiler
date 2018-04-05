@@ -19,9 +19,11 @@ testManyFail parser = mapM_ test
                 Right actual -> expectationFailure $ "Parsed as " ++ show actual
                 Left _       -> return ()
 
+allShouldBe :: [a] -> b -> [(a, b)]
 allShouldBe strs expected = map (\x -> (x, expected)) strs
 
 putSpaces :: [String] -> [String]
+putSpaces [] = []
 putSpaces [x] = [x]
 putSpaces (x:xs) = let rest = concat xs
                    in map (x ++) (putSpaces xs)

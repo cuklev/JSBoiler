@@ -7,6 +7,7 @@ import Text.Parsec
 identifierSymbol :: Parsec String () Char
 identifierSymbol = letter <|> digit <|> char '_' <|> char '$'
 
+identifier :: Parsec String () String
 identifier = do
     let first = letter <|> char '_' <|> char '$'
     liftM2 (:) first (many identifierSymbol)

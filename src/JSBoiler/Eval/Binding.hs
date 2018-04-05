@@ -12,6 +12,7 @@ checkForAlreadyDeclared :: ScopeBindings -> Declaration -> Maybe String
 checkForAlreadyDeclared scope (DeclareBinding name)
     | M.member name scope = Just name
     | otherwise           = Nothing
+checkForAlreadyDeclared _ _ = error "Destructuring is not implemented yet"
 
 declare :: Bool -> Declaration -> JSType -> JSBoiler ()
 declare mut (DeclareBinding name) value = do
@@ -20,7 +21,7 @@ declare mut (DeclareBinding name) value = do
            $ M.insert name Binding { boundValue = value
                                    , mutable = mut
                                    }
-declare mut _ _ = error "Destructuring not implemented"
+declare _ _ _ = error "Destructuring is not implemented yet"
 
 getBindingValue :: String -> JSBoiler (Maybe JSType)
 getBindingValue name = getStack >>= liftIO . findBinding
@@ -33,11 +34,11 @@ getBindingValue name = getStack >>= liftIO . findBinding
 
 setBindingValue :: String -> JSType -> JSBoiler ()
 setBindingValue name value = getStack >>= setBinding
-    where setBinding [] = jsThrow $ JSString $ name ++ "is not declared"
+    where setBinding [] = jsThrow $ JSString $ name ++ " is not declared"
           setBinding (s:ss) = do
             scope <- liftIO $ readIORef s
             case M.lookup name scope of
                 Nothing -> setBinding ss
                 Just b -> if mutable b then let b' = b { boundValue = value } 
                                             in liftIO $ writeIORef s $ M.insert name b' scope
-                                       else jsThrow $ JSString $ name ++ " is declared const, but must throw JS exception"
+                                       else jsThrow $ JSString $ name ++ " is declared const"

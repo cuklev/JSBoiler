@@ -2,7 +2,7 @@
 module JSBoiler.Parser.Statement where
 
 import Control.Monad (void, join)
-import Data.Maybe (fromMaybe, catMaybes)
+import Data.Maybe (catMaybes)
 import Text.Parsec
 import Text.Parsec.Expr
 
@@ -12,31 +12,33 @@ import JSBoiler.Statement
 import JSBoiler.Type (numberPrettyShow)
 
 
+trackNewLineSpaces :: Parsec String () Bool
 trackNewLineSpaces = (endOfLine >> spaces >> return True)
                  <|> (space >> trackNewLineSpaces)
                  <|> return False
 
+objectLiteral :: Parsec String () Expression
 objectLiteral = do
-    char '{'
+    _ <- char '{'
     spaces
     props <- property `sepEndBy` (char ',' >> spaces)
-    char '}'
+    _ <- char '}'
     return $ LiteralObject props
 
     where
         property = between spaces spaces (expressionKey <|> stringNumberKey <|> identKey)
         expressionKey = do
-            char '['
+            _ <- char '['
             key <- fmap snd expression
-            char ']'
+            _ <- char ']'
             spaces
-            char ':'
+            _ <- char ':'
             value <- fmap snd expression
             return (ExpressionKey key, value)
         stringNumberKey = do
             key <- jsString <|> fmap numberPrettyShow jsNumber
             spaces
-            char ':'
+            _ <- char ':'
             value <- fmap snd expression
             return (IdentifierKey key, value)
         identKey = do
@@ -45,22 +47,24 @@ objectLiteral = do
             value <- option (Identifier key) (char ':' >> fmap snd expression)
             return (IdentifierKey key, value)
 
+functionLiteral :: Parsec String () Expression
 functionLiteral = do
-    string "function"
+    _ <- string "function"
     notFollowedBy identifierSymbol
     spaces
-    name <- (identifier <* spaces) <|> return ""
+    _ <- (identifier <* spaces) <|> return ""
+    -- name <- (identifier <* spaces) <|> return ""
     spaces
-    char '('
+    _ <- char '('
     spaces
     args <- decl' `sepBy` char ','
-    char ')'
+    _ <- char ')'
     spaces
-    char '{'
+    _ <- char '{'
     spaces
     statements <- nonEmptyStatements
     spaces
-    char '}'
+    _ <- char '}'
     return $ LiteralFunction args statements
 
     where
@@ -73,6 +77,7 @@ functionLiteral = do
                 Nothing -> (decl, Nothing)
                 Just (_, expr) -> (decl, Just expr)
 
+expression :: Parsec String () (Bool, Expression)
 expression = buildExpressionParser table term
     where
         term = do
@@ -97,7 +102,7 @@ expression = buildExpressionParser table term
                 ]
 
         binaryOperator x f = Infix $ try $ do
-            string x
+            _ <- string x
             notFollowedBy (char '=')
             return (\(_, t1) (nl, t2) -> (nl, f t1 t2))
 
@@ -114,7 +119,7 @@ expression = buildExpressionParser table term
 
         chainPostfixOperations = do
             ps <- many postfixOperations
-            return $ \e -> foldl (\(_, e) (nl, p) -> (nl, p e)) e ps
+            return $ \e -> foldl (\(_, e') (nl, p) -> (nl, p e')) e ps
 
         prefixPlus = char '+' >> spaces >> return PrefixPlus
         prefixMinus = char '-' >> spaces >> return PrefixMinus
@@ -137,12 +142,14 @@ expression = buildExpressionParser table term
         assignModify f l r = assign l $ f l r
 
 
+declaration :: Parsec String () Declaration
 declaration = DeclareBinding <$> identifier
             -- extend to support destructuring
 
+constDeclaration :: Parsec String () (Bool, Statement)
 constDeclaration = do
-    string "const"
-    space
+    _ <- string "const"
+    _ <- space
     decls <- decl' `sepBy1` char ','
     let (nls, result) = unzip decls
     return (last nls, ConstDeclaration result)
@@ -151,13 +158,14 @@ constDeclaration = do
             spaces
             decl <- declaration
             spaces
-            char '='
+            _ <- char '='
             (nl, expr) <- expression
             return (nl, (decl, expr))
 
+letDeclaration :: Parsec String () (Bool, Statement)
 letDeclaration = do
-    string "let"
-    space
+    _ <- string "let"
+    _ <- space
     decls <- decl' `sepBy1` char ','
     let (nls, result) = unzip decls
     return (last nls, LetDeclaration result)
@@ -173,20 +181,22 @@ letDeclaration = do
                 Just (nl, expr) -> (nl, (decl, Just expr))
 
 
+blockScope :: Parsec String () (Bool, Statement)
 blockScope = do
-    char '{'
+    _ <- char '{'
     spaces
     statements <- nonEmptyStatements
     spaces
-    char '}'
+    _ <- char '}'
     return (True, BlockScope statements)
 
+ifStatement :: Parsec String () (Bool, Statement)
 ifStatement = do
-    string "if"
+    _ <- string "if"
     spaces
-    char '('
+    _ <- char '('
     cond <- fmap snd expression
-    char ')'
+    _ <- char ')'
     thenW <- mstatement
     elseW <- join <$> optionMaybe (spaces >> string "else" >> notFollowedBy identifierSymbol >> mstatement)
     let result = IfStatement
@@ -196,20 +206,24 @@ ifStatement = do
             }
     return (True, result)
 
+whileStatement :: Parsec String () (Bool, Statement)
 whileStatement = do
-    string "while"
+    _ <- string "while"
     spaces
-    char '('
+    _ <- char '('
     cond <- fmap snd expression
-    char ')'
+    _ <- char ')'
     body <- mstatement
     let result = WhileStatement
             { condition = cond
-            , body = body
+            , whileBody = body
             }
     return (True, result)
 
+nonEmptyStatements :: Parsec String () [Statement]
 nonEmptyStatements = catMaybes <$> many mstatement
+
+mstatement :: Parsec String () (Maybe Statement)
 mstatement = do
     spaces
     (char ';' >> spaces >> return Nothing)
@@ -225,21 +239,21 @@ mstatement = do
              <|> try blockScope
              <|> try ifStatement
              <|> try whileStatement
-             <|> try break
-             <|> try continue
+             <|> try breakS
+             <|> try continueS
              <|> try returnS
              <|> fmap (fmap Expression) expression
 
-        break = do
-            string "break"
+        breakS = do
+            _ <- string "break"
             nl <- trackNewLineSpaces
             return (nl, BreakStatement)
-        continue = do
-            string "continue"
+        continueS = do
+            _ <- string "continue"
             nl <- trackNewLineSpaces
             return (nl, ContinueStatement)
         returnS = do -- do not shadow return
-            string "return"
-            space
+            _ <- string "return"
+            _ <- space
             (nl, e) <- expression
             return (nl, ReturnStatement (Just e))

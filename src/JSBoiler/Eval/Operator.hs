@@ -3,10 +3,8 @@ module JSBoiler.Eval.Operator
     , (>&&), (>||)
     ) where
 
+import Data.Int (Int32)
 import JSBoiler.Type
-import JSBoiler.Statement
-import JSBoiler.Eval.Property
-import JSBoiler.Eval.Function
 import JSBoiler.Eval.Value
 
 
@@ -30,7 +28,7 @@ x >- y = JSNumber <$> applyNumeric (-) x y
 x >* y = JSNumber <$> applyNumeric (*) x y
 x >/ y = JSNumber <$> applyNumeric (/) x y
 -- % with floating point numbers is nasty
-x >% y = JSNumber <$> applyNumeric (\nx ny -> nx - ny * fromIntegral (floor $ nx / ny)) x y
+x >% y = JSNumber <$> applyNumeric (\nx ny -> nx - ny * fromIntegral (floor $ nx / ny :: Int32)) x y
 
 -- JSBoiler JSType for short circuit behaviour
 (>&&), (>||) :: JSBoiler JSType -> JSBoiler JSType -> JSBoiler JSType

@@ -16,6 +16,10 @@ library:
   - parsec
   - transformers
   - template-haskell
+  ghc-options:
+  - -Wall
+  - -Werror
+
 
 executables:
   boiler:
@@ -23,6 +27,9 @@ executables:
     source-dirs: app
     dependencies:
     - JSBoiler
+    ghc-options:
+    - -Wall
+    - -Werror
 
 tests:
   boiler-tests:

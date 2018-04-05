@@ -7,7 +7,6 @@ import System.IO (readFile, hFlush, stdout)
 import JSBoiler.Parser (parseCode)
 import JSBoiler.Eval (evalCode)
 import JSBoiler.Type (evalBoiler, initStack, showJSType)
-import JSBoiler.Quasi
 
 main :: IO ()
 main = do
@@ -31,7 +30,7 @@ repl = initStack >>= \stack -> forever $ do
             feedback `catch` \e -> print (e :: SomeException)
 
 runFile :: String -> [String] -> IO ()
-runFile file args = do
+runFile file _ = do
     stack <- initStack
     code <- readFile file
     -- do something with args

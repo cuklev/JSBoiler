@@ -9,7 +9,6 @@ import Control.Monad.IO.Class (liftIO)
 import Data.IORef
 import qualified Data.HashMap.Strict as M
 
-import JSBoiler.Statement
 import JSBoiler.Type
 import JSBoiler.Eval.Function
 
@@ -17,7 +16,7 @@ import JSBoiler.Eval.Function
 getProperty :: String -> Object -> Maybe Property
 getProperty name obj = case own of
         Nothing -> prototype obj >>= getProperty name
-        Just prop -> own
+        Just _ -> own
     where own = M.lookup name $ properties obj
 
 getPropertyValue :: String -> IORef Object -> JSBoiler (Maybe JSType)
@@ -25,7 +24,7 @@ getPropertyValue name ref = do
     obj <- liftIO $ readIORef ref
     let mprop = getProperty name obj
         getValue prop = case getter prop of
-            Nothing -> return $ value prop
+            Nothing -> return $ propertyValue prop
             Just func -> callFunction ref func []
 
     maybe (return Nothing) (fmap Just . getValue) mprop
@@ -42,7 +41,7 @@ setPropertyValue name ref value = do
         mprop = M.lookup name props
         setValue prop val = case setter prop of
             Nothing -> if writeable prop
-                            then let obj' = setProperty name (prop { value = val }) obj
+                            then let obj' = setProperty name (prop { propertyValue = val }) obj
                                  in liftIO $ writeIORef ref obj'
                             else jsThrow $ JSString $ "Cannot assign to read only property '" ++ name ++ "'"
             Just func -> void (callFunction ref func [val])
@@ -50,7 +49,7 @@ setPropertyValue name ref value = do
     case mprop of
         Nothing -> do
             let props' = M.insert name Property
-                     { value = value
+                     { propertyValue = value
                      , writeable = True
                      , enumerable = True
                      , configurable = True

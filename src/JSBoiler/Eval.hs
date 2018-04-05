@@ -54,8 +54,8 @@ evalExpression expr = case expr of
             value `assignTo` x
             return value
 
-        expr `FunctionCall` argsExpr -> do
-            val <- evalExpression expr
+        funcExpr `FunctionCall` argsExpr -> do
+            val <- evalExpression funcExpr
             args <- mapM evalExpression argsExpr
             case val of
                 JSObject ref -> do
@@ -72,9 +72,9 @@ evalExpression expr = case expr of
             vy <- evalExpression y
             f vx vy
         assignTo value (LValueBinding name) = setBindingValue name value
-        assignTo value (LValueProperty expr key) = do
+        assignTo value (LValueProperty objExpr key) = do
                             name <- getKeyName key
-                            ref <- toObjectRef <$> evalExpression expr
+                            ref <- toObjectRef <$> evalExpression objExpr
                             setPropertyValue name ref value
         assignTo _ _ = error "Not implemented"
 
@@ -113,7 +113,7 @@ evalStatement statement = case statement of
         maybe (return Nothing) evalStatement
             $ if condValue then thenW else elseW
 
-    WhileStatement { condition = cond, body = body } ->
+    WhileStatement { condition = cond, whileBody = body } ->
         let loop = do
                 condValue <- evalExpression cond >>= booleanValue
                 when condValue $ do
@@ -132,7 +132,7 @@ evalStatement statement = case statement of
         jsReturn value
         return Nothing
 
-    _            -> error "Not implemented"
+--    _            -> error "Not implemented"
 
 evalCode :: [Statement] -> JSBoiler (Maybe JSType)
 evalCode = foldM (const evalStatement) Nothing

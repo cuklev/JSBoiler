@@ -47,7 +47,7 @@ data Object = Object { properties :: HashMap String Property
                      , prototype :: Maybe Object
                      }
 
-data Property = Property { value :: JSType
+data Property = Property { propertyValue :: JSType
                          , writeable :: Bool
                          , enumerable :: Bool
                          , configurable :: Bool
@@ -56,7 +56,7 @@ data Property = Property { value :: JSType
                          }
 
 valuedProperty :: JSType -> Property
-valuedProperty x = Property { value = x
+valuedProperty x = Property { propertyValue = x
                             , writeable = True
                             , enumerable = True
                             , configurable = True
@@ -77,7 +77,7 @@ isPrimitive _            = True
 
 
 numberPrettyShow :: Double -> String
-numberPrettyShow x = strip $ show x
+numberPrettyShow = strip . show
     where
         strip "" = ""
         strip ".0" = "" -- there may be a better way
@@ -178,7 +178,7 @@ showJSType (JSString x) = return $ show x
 showJSType (JSBoolean x) = return $ if x then "true" else "false"
 showJSType JSUndefined = return "undefined"
 showJSType JSNull = return "null"
-showJSType (JSObject ref) = showObj 0 [] ref
+showJSType (JSObject objRef) = showObj 0 [] objRef
     where
         showObj indentLevel parents ref
             | ref `elem` parents = return "[Circular]"
@@ -192,7 +192,7 @@ showJSType (JSObject ref) = showObj 0 [] ref
                 return $ "{\n" ++ unlines indented ++ putIndents indentLevel "}"
 
         showKeyValue indentLevel parents (k, p) =
-            let v = value p
+            let v = propertyValue p
             in toKeyValue k <$> case v of
                 JSObject ref -> showObj (indentLevel + 1) parents ref
                 _            -> showJSType v
