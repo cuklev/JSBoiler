@@ -145,7 +145,7 @@ jsReturn :: JSType -> JSBoiler ()
 jsReturn = JSBoiler . throwE . InterruptReturn
 
 jsThrow :: JSType -> JSBoiler a
-jsThrow = (undefined <*) . JSBoiler . throwE . InterruptThrow
+jsThrow = (return undefined <*) . JSBoiler . throwE . InterruptThrow
 
 initStack :: IO Stack
 initStack = do
