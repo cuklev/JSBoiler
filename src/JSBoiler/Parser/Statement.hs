@@ -106,9 +106,9 @@ expression = buildExpressionParser table term
         functionCall = between (char '(' >> spaces) (char ')') (fmap snd expression `sepBy` char ',')
 
         postfixOperations = do
-            expr <- fmap (PropertyOf . IdentifierKey) propertyAccess
-                    <|> fmap (PropertyOf . ExpressionKey) indexAccess
-                    <|> fmap FunctionCall functionCall
+            expr <- fmap (flip (:.:) . IdentifierKey) propertyAccess
+                    <|> fmap (flip (:.:) . ExpressionKey) indexAccess
+                    <|> fmap (flip FunctionCall) functionCall
             nl <- trackNewLineSpaces
             return (nl, expr)
 
@@ -131,7 +131,7 @@ expression = buildExpressionParser table term
             return $ \(nl, e) -> (nl, foldr ($) e ps)
 
         assign (Identifier l) r = LValueBinding l :=: r
-        assign (PropertyOf prop expr) r = LValueProperty prop expr :=: r
+        assign (expr :.: prop) r = LValueProperty expr prop :=: r
         assign _ _ = error "Invalid left-hand assignment"
 
         assignModify f l r = assign l $ f l r

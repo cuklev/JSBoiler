@@ -30,7 +30,7 @@ evalExpression expr = case expr of
         Identifier x     -> getBindingValue x
                                 >>= maybe (jsThrow $ JSString $ x ++ " is not defined") return
 
-        key `PropertyOf` x -> do
+        x :.:key -> do
             name <- getKeyName key
             vx <- evalExpression x
             let ref = toObjectRef vx
@@ -54,7 +54,7 @@ evalExpression expr = case expr of
             value `assignTo` x
             return value
 
-        FunctionCall argsExpr expr -> do
+        expr `FunctionCall` argsExpr -> do
             val <- evalExpression expr
             args <- mapM evalExpression argsExpr
             case val of
@@ -72,7 +72,7 @@ evalExpression expr = case expr of
             vy <- evalExpression y
             f vx vy
         assignTo value (LValueBinding name) = setBindingValue name value
-        assignTo value (LValueProperty key expr) = do
+        assignTo value (LValueProperty expr key) = do
                             name <- getKeyName key
                             ref <- toObjectRef <$> evalExpression expr
                             setPropertyValue name ref value

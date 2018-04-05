@@ -77,10 +77,10 @@ spec = do
         describe "assignment" $ testMany (fmap snd expression) $
                putSpaces ["x", "=", "4"] `allShouldBe` (LValueBinding "x" :=: LiteralNumber 4)
             ++ putSpaces ["x", "=", "4+7"] `allShouldBe` (LValueBinding "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
-            ++ putSpaces ["x.y", "=", "4"] `allShouldBe` (IdentifierKey "y" `LValueProperty` Identifier "x" :=: LiteralNumber 4)
-            ++ putSpaces ["x.y", "=", "4+7"] `allShouldBe` (IdentifierKey "y" `LValueProperty` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
-            ++ putSpaces ["x[2]", "=", "4"] `allShouldBe` (ExpressionKey (LiteralNumber 2) `LValueProperty` Identifier "x" :=: LiteralNumber 4)
-            ++ putSpaces ["x[2]", "=", "4+7"] `allShouldBe` (ExpressionKey (LiteralNumber 2) `LValueProperty` Identifier "x" :=: (LiteralNumber 4 :+: LiteralNumber 7))
+            ++ putSpaces ["x.y", "=", "4"] `allShouldBe` ((Identifier "x" `LValueProperty` IdentifierKey "y") :=: LiteralNumber 4)
+            ++ putSpaces ["x.y", "=", "4+7"] `allShouldBe` ((Identifier "x" `LValueProperty` IdentifierKey "y") :=: (LiteralNumber 4 :+: LiteralNumber 7))
+            ++ putSpaces ["x[2]", "=", "4"] `allShouldBe` ((Identifier "x" `LValueProperty` ExpressionKey (LiteralNumber 2)) :=: LiteralNumber 4)
+            ++ putSpaces ["x[2]", "=", "4+7"] `allShouldBe` ((Identifier "x" `LValueProperty` ExpressionKey (LiteralNumber 2)) :=: (LiteralNumber 4 :+: LiteralNumber 7))
             ++ putSpaces ["x", "+=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :+: LiteralNumber 4))
             ++ putSpaces ["x", "-=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :-: LiteralNumber 4))
             ++ putSpaces ["x", "*=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :*: LiteralNumber 4))
@@ -88,33 +88,33 @@ spec = do
             ++ putSpaces ["x", "%=", "4"] `allShouldBe` (LValueBinding "x" :=: (Identifier "x" :%: LiteralNumber 4))
 
         describe "other" $ testMany (fmap snd expression) $
-               putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` ((IdentifierKey "y" `PropertyOf` Identifier "x") :+: LiteralNumber 3)
-            ++ putSpaces ["x", "[", "'y'", "]", "+", "3"] `allShouldBe` ((ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x") :+: LiteralNumber 3)
-            ++ putSpaces ["x", "(", ")", "+", "3"] `allShouldBe` (([] `FunctionCall` Identifier "x") :+: LiteralNumber 3)
+               putSpaces ["x", ".", "y", "+", "3"] `allShouldBe` ((Identifier "x" :.: IdentifierKey "y") :+: LiteralNumber 3)
+            ++ putSpaces ["x", "[", "'y'", "]", "+", "3"] `allShouldBe` ((Identifier "x" :.: ExpressionKey (LiteralString "y")) :+: LiteralNumber 3)
+            ++ putSpaces ["x", "(", ")", "+", "3"] `allShouldBe` ((Identifier "x" `FunctionCall` []) :+: LiteralNumber 3)
 
     describe "postfix operations" $ do
         describe "property access" $ testMany (fmap snd expression) $
-               putSpaces ["'str'", ".", "p1"] `allShouldBe` (IdentifierKey "p1" `PropertyOf` LiteralString "str")
-            ++ putSpaces ["'str'", ".", "p1", ".", "p2"] `allShouldBe` (IdentifierKey "p2" `PropertyOf` (IdentifierKey "p1" `PropertyOf` LiteralString "str"))
+               putSpaces ["'str'", ".", "p1"] `allShouldBe` (LiteralString "str" :.: IdentifierKey "p1")
+            ++ putSpaces ["'str'", ".", "p1", ".", "p2"] `allShouldBe` ((LiteralString "str" :.: IdentifierKey "p1") :.: IdentifierKey "p2")
 
         describe "indexing" $ testMany (fmap snd expression) $
-               putSpaces ["'str'", "[", "'p1'", "]"] `allShouldBe` (ExpressionKey (LiteralString "p1") `PropertyOf` LiteralString "str")
-            ++ putSpaces ["'str'", "[", "'p1'", "]", "[", "'p2'", "]"] `allShouldBe` (ExpressionKey (LiteralString "p2") `PropertyOf` (ExpressionKey (LiteralString "p1") `PropertyOf` LiteralString "str"))
+               putSpaces ["'str'", "[", "'p1'", "]"] `allShouldBe` (LiteralString "str" :.: ExpressionKey (LiteralString "p1"))
+            ++ putSpaces ["'str'", "[", "'p1'", "]", "[", "'p2'", "]"] `allShouldBe` ((LiteralString "str" :.: ExpressionKey (LiteralString "p1")) :.: ExpressionKey (LiteralString "p2"))
 
         describe "function call" $ testMany (fmap snd expression) $
-               putSpaces ["x", "(", ")"] `allShouldBe` ([] `FunctionCall` Identifier "x")
-            ++ putSpaces ["x", "(", "3", ")"] `allShouldBe` ([LiteralNumber 3] `FunctionCall` Identifier "x")
-            ++ putSpaces ["x", "(", "3", ",", "4", ")"] `allShouldBe` ([LiteralNumber 3, LiteralNumber 4] `FunctionCall` Identifier "x")
-            ++ putSpaces ["x", "(", "3", ")", "(", "4", ")"] `allShouldBe` ([LiteralNumber 4] `FunctionCall` ([LiteralNumber 3] `FunctionCall` Identifier "x"))
+               putSpaces ["x", "(", ")"] `allShouldBe` (Identifier "x" `FunctionCall` [])
+            ++ putSpaces ["x", "(", "3", ")"] `allShouldBe` (Identifier "x" `FunctionCall` [LiteralNumber 3])
+            ++ putSpaces ["x", "(", "3", ",", "4", ")"] `allShouldBe` (Identifier "x" `FunctionCall` [LiteralNumber 3, LiteralNumber 4])
+            ++ putSpaces ["x", "(", "3", ")", "(", "4", ")"] `allShouldBe` ((Identifier "x" `FunctionCall` [LiteralNumber 3]) `FunctionCall` [LiteralNumber 4])
 
         describe "mixed" $ testMany (fmap snd expression)
-            [ ("x.y['z']", ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x"))
-            , ("x['y'].z", IdentifierKey "z" `PropertyOf` (ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x"))
-            , ("x.y('z')", [LiteralString "z"] `FunctionCall` (IdentifierKey "y" `PropertyOf` Identifier "x"))
-            , ("x['y']('z')", [LiteralString "z"] `FunctionCall` (ExpressionKey (LiteralString "y") `PropertyOf` Identifier "x"))
-            , ("x('y').z", IdentifierKey "z" `PropertyOf` ([LiteralString "y"] `FunctionCall` Identifier "x"))
-            , ("x('y')['z']", ExpressionKey (LiteralString "z") `PropertyOf` ([LiteralString "y"] `FunctionCall` Identifier "x"))
-            , ("x.y['z'](0)", [LiteralNumber 0] `FunctionCall` (ExpressionKey (LiteralString "z") `PropertyOf` (IdentifierKey "y" `PropertyOf` Identifier "x")))
+            [ ("x.y['z']", (Identifier "x" :.: IdentifierKey "y") :.: ExpressionKey (LiteralString "z"))
+            , ("x['y'].z", (Identifier "x" :.: ExpressionKey (LiteralString "y")) :.: IdentifierKey "z")
+            , ("x.y('z')", (Identifier "x" :.: IdentifierKey "y") `FunctionCall` [LiteralString "z"])
+            , ("x['y']('z')", (Identifier "x" :.: ExpressionKey (LiteralString "y")) `FunctionCall` [LiteralString "z"])
+            , ("x('y').z", (Identifier "x" `FunctionCall` [LiteralString "y"]) :.: IdentifierKey "z")
+            , ("x('y')['z']", (Identifier "x" `FunctionCall` [LiteralString "y"]) :.: ExpressionKey (LiteralString "z"))
+            , ("x.y['z'](0)", ((Identifier "x" :.: IdentifierKey "y") :.: ExpressionKey (LiteralString "z")) `FunctionCall` [LiteralNumber 0])
             ]
 
     describe "let declarations" $ do
