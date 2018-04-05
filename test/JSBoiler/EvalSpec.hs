@@ -109,6 +109,8 @@ spec = do
         it "Returns argument" $ [jsEval|const f = function(x){return x;}; f(4)|] `shouldEvalTo` JSNumber 4
         it "Returns something with arguments" $ [jsEval|const f = function(x, y){return x + y;}; f(4, 5)|] `shouldEvalTo` JSNumber 9
         it "Some recursion" $ [jsEval|const f = function(x) {return x && (x-1) && (f(x-1) + f(x-2)) || 1;}; f(10)|] `shouldEvalTo` JSNumber 89
+        it "Second argument not given" $ [jsEval|const f = function(x, y) {return y;}; f(10)|] `shouldEvalTo` JSUndefined
+        it "Using default parameter value" $ [jsEval|const f = function(x, y = true) {return y;}; f(10)|] `shouldEvalTo` JSBoolean True
 
     describe "Blocks" $ do
         it "Using outer scope" $ [jsEval|let x = 4; { x += 2; } x|] `shouldEvalTo` JSNumber 6
