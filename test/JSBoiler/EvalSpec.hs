@@ -83,6 +83,7 @@ spec = do
         it "const x = 5" $ [jsEval|const x = 5; x|] `shouldEvalTo` JSNumber 5
         it "const x = 5, y = 3" $ [jsEval|const x = 5, y = 3; x + y|] `shouldEvalTo` JSNumber 8
         it "changing let declaration" $ [jsEval|let x = 5; x = 6; x|] `shouldEvalTo` JSNumber 6
+        it "changing const declaration" $ [jsEval|const x = 5; x = 6|] `shouldThrow` anyException
 
     describe "if()s" $ do
         it "if true" $ [jsEval|let x = 0; if(true) x = 1; x|] `shouldEvalTo` JSNumber 1
