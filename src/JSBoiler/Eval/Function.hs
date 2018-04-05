@@ -35,11 +35,11 @@ getBehaviour obj = behaviour obj <|> (prototype obj >>= getBehaviour)
 
 callFunction :: IORef Object -> Function -> [JSType] -> JSBoiler JSType
 callFunction obj func args = getReturnValue $ do
-    let this = fromMaybe obj $ boundThis func
+    let this = fromMaybe obj $ boundThis func -- TODO: fix this
         newBindings = M.fromList $ zipWith bindArgument (argumentNames func) (args ++ repeat JSUndefined)
                                    ++ [("this", Binding { boundValue = JSObject this, mutable = False })]
-    pushStack newBindings
-        $ substiteStack (functionScope func)
+    substiteStack (functionScope func)
+        $ pushStack newBindings
         $ function func
 
     where
