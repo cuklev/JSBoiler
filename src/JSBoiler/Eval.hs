@@ -136,30 +136,3 @@ evalStatement statement = case statement of
 
 evalCode :: [Statement] -> JSBoiler (Maybe JSType)
 evalCode = foldM (const evalStatement) Nothing
-
--- for REPL
-showJSType :: JSType -> JSBoiler String
-showJSType (JSObject ref) = showObj 0 [] ref
-    where
-        showObj indentLevel parents ref
-            | ref `elem` parents = return "[Circular]"
-            | otherwise = do
-                obj <- liftIO $ readIORef ref
-                let props = M.toList $ properties obj
-                    enumProps = filter (\(_, p) -> enumerable p) props
-
-                strings <- mapM (showKeyValue indentLevel (ref:parents)) enumProps
-                let indented = map (putIndents (indentLevel + 1)) strings
-                return $ "{\n" ++ unlines indented ++ putIndents indentLevel "}"
-
-        showKeyValue indentLevel parents (k, p) =
-            let v = value p
-            in toKeyValue k <$> case v of
-                JSObject ref -> showObj (indentLevel + 1) parents ref
-                _            -> showJSType v
-
-        toKeyValue k v = k ++ ": " ++ v ++ ","
-
-        putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)
-showJSType (JSString x) = return $ show x
-showJSType x = stringValue x

@@ -1,12 +1,12 @@
 module Main where
 
 import Control.Exception (catch, SomeException)
-import Control.Monad (void, forever)
+import Control.Monad (void, forever, (>=>))
 import System.Environment (getArgs)
 import System.IO (readFile, hFlush, stdout)
 import JSBoiler.Parser (parseCode)
-import JSBoiler.Eval (evalCode, showJSType)
-import JSBoiler.Type (evalBoiler, initStack)
+import JSBoiler.Eval (evalCode)
+import JSBoiler.Type (evalBoiler, initStack, showJSType)
 import JSBoiler.Quasi
 
 main :: IO ()
@@ -25,11 +25,9 @@ repl = initStack >>= \stack -> forever $ do
     case parseCode line of
         Left err -> print err
         Right statements -> do
-            let boiler = evalCode statements
-                            >>= maybe (return Nothing) (fmap Just . showJSType)
-                feedback = do
-                    mresult <- evalBoiler stack boiler
-                    maybe (return ()) putStrLn mresult
+            let feedback = do
+                    mresult <- evalBoiler stack $ evalCode statements
+                    maybe (return ()) (showJSType >=> putStrLn) mresult
             feedback `catch` \e -> print (e :: SomeException)
 
 runFile :: String -> [String] -> IO ()

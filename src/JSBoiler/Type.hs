@@ -21,6 +21,7 @@ module JSBoiler.Type
     , jsThrow
     , initStack
     , evalBoiler
+    , showJSType
     ) where
 
 import Control.Monad.IO.Class
@@ -164,6 +165,38 @@ evalBoiler :: Stack -> JSBoiler a -> IO a
 evalBoiler stack boiler = do
     result <- runExceptT $ runReaderT (runBoiler boiler) stack
     case result of
-        Left (InterruptThrow _) -> error "Uncaught JS exception"
-        Left _                  -> error "Something else was uncaught"
-        Right value             -> return value
+        Left (InterruptThrow ex)  -> do
+            err <- showJSType ex
+            error $ "Uncaught JS exception:\n" ++ err
+        Left _                    -> error "Something else was uncaught"
+        Right value               -> return value
+
+-- |for REPL
+showJSType :: JSType -> IO String
+showJSType (JSNumber x) = return $ show x
+showJSType (JSString x) = return $ show x
+showJSType (JSBoolean x) = return $ if x then "true" else "false"
+showJSType JSUndefined = return "undefined"
+showJSType JSNull = return "null"
+showJSType (JSObject ref) = showObj 0 [] ref
+    where
+        showObj indentLevel parents ref
+            | ref `elem` parents = return "[Circular]"
+            | otherwise = do
+                obj <- readIORef ref
+                let props = M.toList $ properties obj
+                    enumProps = filter (\(_, p) -> enumerable p) props
+
+                strings <- mapM (showKeyValue indentLevel (ref:parents)) enumProps
+                let indented = map (putIndents (indentLevel + 1)) strings
+                return $ "{\n" ++ unlines indented ++ putIndents indentLevel "}"
+
+        showKeyValue indentLevel parents (k, p) =
+            let v = value p
+            in toKeyValue k <$> case v of
+                JSObject ref -> showObj (indentLevel + 1) parents ref
+                _            -> showJSType v
+
+        toKeyValue k v = k ++ ": " ++ v ++ ","
+
+        putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)
