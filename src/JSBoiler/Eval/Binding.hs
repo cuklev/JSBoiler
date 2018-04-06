@@ -16,7 +16,7 @@ checkForAlreadyDeclared _ _ = error "Destructuring is not implemented yet"
 
 declare :: Bool -> Declaration -> JSType -> JSBoiler ()
 declare mut (DeclareBinding name) value = do
-    (s:_) <- getStack
+    (s:_) <- getScope
     liftIO $ modifyIORef' s
            $ M.insert name Binding { boundValue = value
                                    , mutable = mut
@@ -24,7 +24,7 @@ declare mut (DeclareBinding name) value = do
 declare _ _ _ = error "Destructuring is not implemented yet"
 
 getBindingValue :: String -> JSBoiler (Maybe JSType)
-getBindingValue name = getStack >>= liftIO . findBinding
+getBindingValue name = getScope >>= liftIO . findBinding
     where findBinding [] = return Nothing
           findBinding (s:ss) = do
             scope <- readIORef s
@@ -33,12 +33,12 @@ getBindingValue name = getStack >>= liftIO . findBinding
                 Just x -> return $ Just $ boundValue x
 
 setBindingValue :: String -> JSType -> JSBoiler ()
-setBindingValue name value = getStack >>= setBinding
+setBindingValue name value = getScope >>= setBinding
     where setBinding [] = jsThrow $ JSString $ name ++ " is not declared"
           setBinding (s:ss) = do
             scope <- liftIO $ readIORef s
             case M.lookup name scope of
                 Nothing -> setBinding ss
-                Just b -> if mutable b then let b' = b { boundValue = value } 
+                Just b -> if mutable b then let b' = b { boundValue = value }
                                             in liftIO $ writeIORef s $ M.insert name b' scope
                                        else jsThrow $ JSString $ name ++ " is declared const"

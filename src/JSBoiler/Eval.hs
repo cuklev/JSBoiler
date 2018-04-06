@@ -23,7 +23,7 @@ evalExpression expr = case expr of
         LiteralNull      -> return JSNull
 
         LiteralObject x  -> mapM (\(k, v) -> liftM2 (,) (getKeyName k) (evalExpression v)) x
-                                >>= makeObject
+                                >>= liftIO . makeObject
 
         LiteralFunction args statements -> makeFunction evalCode args statements
 
@@ -88,7 +88,7 @@ evalStatement statement = case statement of
 
     ConstDeclaration declarations -> do
         forM_ declarations $ \(decl, expr) -> do
-            (scopeRef:_) <- getStack
+            (scopeRef:_) <- getScope
             scope <- liftIO $ readIORef scopeRef
             case checkForAlreadyDeclared scope decl of
                 Nothing -> evalExpression expr
@@ -98,7 +98,7 @@ evalStatement statement = case statement of
 
     LetDeclaration declarations -> do
         forM_ declarations $ \(decl, mexpr) -> do
-            (scopeRef:_) <- getStack
+            (scopeRef:_) <- getScope
             scope <- liftIO $ readIORef scopeRef
             case checkForAlreadyDeclared scope decl of
                 Nothing -> maybe (return JSUndefined) evalExpression mexpr
@@ -106,7 +106,7 @@ evalStatement statement = case statement of
                 Just name -> error $ "Identifier '" ++ name ++ "' has already been declared" -- should be Syntax error
         return Nothing
 
-    BlockScope statements -> pushStack M.empty $ evalCode statements
+    BlockScope statements -> pushScope M.empty $ evalCode statements
 
     IfStatement { condition = cond, thenWhat = thenW, elseWhat = elseW } -> do
         condValue <- evalExpression cond >>= booleanValue

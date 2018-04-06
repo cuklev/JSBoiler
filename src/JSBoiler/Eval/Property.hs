@@ -64,8 +64,8 @@ setPropertyValue name ref value = do
 
 
 -- |Makes object with specified properties
-makeObject :: [(String, JSType)] -> JSBoiler JSType
-makeObject pairs = liftIO $ JSObject <$> newIORef obj
+makeObject :: [(String, JSType)] -> IO JSType
+makeObject pairs = JSObject <$> newIORef obj
     where
         toProperty = fmap valuedProperty
         props = map toProperty pairs

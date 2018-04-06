@@ -10,16 +10,16 @@ module JSBoiler.Type
     , Binding (..)
     , ScopeBindings
     , JSBoiler
-    , getStack
-    , substiteStack
-    , pushStack
+    , getScope
+    , substiteScope
+    , pushScope
     , getReturnValue
     , shouldContinueLoop
     , jsBreak
     , jsContinue
     , jsReturn
     , jsThrow
-    , initStack
+    , initEnv
     , evalBoiler
     , showJSType
     ) where
@@ -96,23 +96,29 @@ data InterruptReason = InterruptBreak
                      | InterruptReturn JSType
                      | InterruptThrow JSType
 
-newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Scope (ExceptT InterruptReason IO) a }
+data Environment = Environment
+    { envScope    :: Scope
+    , globalThis  :: IORef Object
+    , currentThis :: IORef Object
+    }
+
+newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Environment (ExceptT InterruptReason IO) a }
                         deriving (Functor, Applicative, Monad, MonadIO)
 
-getStack :: JSBoiler Scope
-getStack = JSBoiler ask
+getScope :: JSBoiler Scope
+getScope = JSBoiler $ fmap envScope ask
 
-substiteStack :: Scope -> JSBoiler a -> JSBoiler a
-substiteStack stack = JSBoiler . local (const stack) . runBoiler
+substiteScope :: Scope -> JSBoiler a -> JSBoiler a
+substiteScope scope = JSBoiler . local (\e -> e { envScope = scope }) . runBoiler
 
-pushStack :: ScopeBindings -> JSBoiler a -> JSBoiler a
-pushStack bindings block = do
+pushScope :: ScopeBindings -> JSBoiler a -> JSBoiler a
+pushScope bindings block = do
     ref <- liftIO $ newIORef bindings
-    JSBoiler $ local (ref:) $ runBoiler block
+    JSBoiler $ local (\e -> e { envScope = ref : envScope e }) $ runBoiler block
 
 mapExceptBoiler :: (Either InterruptReason a -> Either InterruptReason b) -> JSBoiler a -> JSBoiler b
-mapExceptBoiler f boiler = JSBoiler $ ReaderT $ \stack -> mapExceptT (fmap f)
-                                              $ runReaderT (runBoiler boiler) stack
+mapExceptBoiler f boiler = JSBoiler $ ReaderT $ \scope -> mapExceptT (fmap f)
+                                              $ runReaderT (runBoiler boiler) scope
 
 getReturnValue :: JSBoiler () -> JSBoiler JSType
 getReturnValue = mapExceptBoiler get
@@ -139,18 +145,35 @@ jsReturn = JSBoiler . lift . throwE . InterruptReturn
 jsThrow :: JSType -> JSBoiler a
 jsThrow = (>> return undefined) . JSBoiler . lift . throwE . InterruptThrow
 
-initStack :: IO Scope
-initStack = do
-    ref <- newIORef global
-    return [ref]
-    where global = M.fromList
-            [ ("undefined", Binding { boundValue = JSUndefined, mutable = False })
-            , ("NaN", Binding { boundValue = JSNumber (0 / 0), mutable = False })
-            ]
+initEnv :: IO Environment
+initEnv = do
+    scope <- newIORef M.empty
+    this <- newIORef Object
+        { properties = M.fromList props
+        , behaviour  = Nothing
+        , prototype  = Nothing
+        }
+    return Environment
+        { envScope = [scope]
+        , globalThis = this
+        , currentThis = this
+        }
+    where
+        props = map makeRO [ ("undefined", JSUndefined)
+                           , ("NaN", JSNumber (0 / 0))
+                           ]
+        makeRO (name, value) = (name, Property
+            { propertyValue = value
+            , writeable = False
+            , enumerable = True
+            , configurable = True
+            , getter = Nothing
+            , setter = Nothing
+            })
 
-evalBoiler :: Scope -> JSBoiler a -> IO a
-evalBoiler stack boiler = do
-    result <- runExceptT $ runReaderT (runBoiler boiler) stack
+evalBoiler :: Environment -> JSBoiler a -> IO a
+evalBoiler env boiler = do
+    result <- runExceptT $ runReaderT (runBoiler boiler) env
     case result of
         Left (InterruptThrow ex)  -> do
             err <- showJSType ex

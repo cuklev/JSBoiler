@@ -16,9 +16,9 @@ makeFunction :: ([Statement] -> JSBoiler a)
              -> [Statement]
              -> JSBoiler JSType
 makeFunction eval args statements = do
-    stack <- getStack
+    scope <- getScope
     let func = Function { boundThis = Nothing
-                        , functionScope = stack
+                        , functionScope = scope
                         , argumentNames = args
                         , function = void $ eval statements
                         }
@@ -37,8 +37,8 @@ callFunction obj func args = getReturnValue $ do
     let this = fromMaybe obj $ boundThis func -- TODO: fix this
         newBindings = M.fromList $ zipWith bindArgument (argumentNames func) (args ++ repeat JSUndefined)
                                    ++ [("this", Binding { boundValue = JSObject this, mutable = False })]
-    substiteStack (functionScope func)
-        $ pushStack newBindings
+    substiteScope (functionScope func)
+        $ pushScope newBindings
         $ function func
 
     where

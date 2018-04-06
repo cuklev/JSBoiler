@@ -37,6 +37,6 @@ jsCode = QuasiQuoter { quoteExp = qRight . parseCode }
 jsEval :: QuasiQuoter
 jsEval = QuasiQuoter { quoteExp = eqRight . parseCode }
     where eqRight (Left x) = error $ show x
-          eqRight (Right x) = [| do stack <- initStack
-                                    evalBoiler stack $ evalCode x
+          eqRight (Right x) = [| do env <- initEnv
+                                    evalBoiler env $ evalCode x
                               |]
