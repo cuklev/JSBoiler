@@ -32,7 +32,7 @@ evalExpression expr = case expr of
 
         CurrentThis      -> fmap JSObject getCurrentThis
 
-        x :.:key -> do
+        x :.: key -> do
             name <- getKeyName key
             vx <- evalExpression x
             let ref = toObjectRef vx

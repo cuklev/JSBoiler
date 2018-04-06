@@ -13,7 +13,7 @@ spec = do
                 [ "x", "l2", "Abc", "__proto__", "OhoB0_hoU"
                 , "le", "letx", "cons", "constx", "functio", "functionx"
                 , "tru", "truex", "fals", "falsex", "nul", "nullx"
-                , "clas", "classx"
+                , "thi", "thisx", "clas", "classx"
                 ]
 
         describe "numbers" $ testMany (fmap snd expression)
