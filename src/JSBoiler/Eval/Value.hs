@@ -10,9 +10,9 @@ import JSBoiler.Eval.Property
 import JSBoiler.Eval.Function
 
 
-toObjectRef :: JSType -> IORef Object
-toObjectRef (JSObject ref) = ref
-toObjectRef _ = error "Not implemented"
+toObjectRef :: JSType -> JSBoiler (IORef Object)
+toObjectRef (JSObject ref) = return ref
+toObjectRef _ = error "Boxing of primitives is not implemented"
 
 toPrimitive :: JSType -> JSBoiler JSType
 toPrimitive (JSObject ref) = tryCall "valueOf"
@@ -33,7 +33,6 @@ toPrimitive (JSObject ref) = tryCall "valueOf"
                                 then return result
                                 else next
                 _ -> next
-
 toPrimitive x = return x
 
 

@@ -35,7 +35,7 @@ evalExpression expr = case expr of
         x :.: key -> do
             name <- getKeyName key
             vx <- evalExpression x
-            let ref = toObjectRef vx
+            ref <- toObjectRef vx
             fromMaybe JSUndefined <$> getPropertyValue name ref
 
         x :+: y -> apply (>+) x y
@@ -76,7 +76,7 @@ evalExpression expr = case expr of
         assignTo value (LValueBinding name) = setBindingValue name value
         assignTo value (LValueProperty objExpr key) = do
                             name <- getKeyName key
-                            ref <- toObjectRef <$> evalExpression objExpr
+                            ref <- evalExpression objExpr >>= toObjectRef
                             setPropertyValue name ref value
         assignTo _ _ = error "Not implemented"
 

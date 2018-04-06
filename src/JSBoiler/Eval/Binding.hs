@@ -1,12 +1,15 @@
 module JSBoiler.Eval.Binding where
 
+import Control.Monad (forM_)
 import Control.Monad.IO.Class (liftIO)
 import Data.IORef
+import Data.Maybe (fromMaybe)
 import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type
 import JSBoiler.Eval.Property
+import JSBoiler.Eval.Value (toObjectRef)
 
 
 checkForAlreadyDeclared :: ScopeBindings -> Declaration -> Maybe String
@@ -23,7 +26,16 @@ declare mut (DeclareBinding name) value = do
            $ M.insert name Binding { boundValue = value
                                    , mutable = mut
                                    }
-declare _ _ _ = error "Destructuring is not implemented yet"
+declare mut (DeclareDestructObject props mrest) value = do
+    forM_ props $ \(name, decl) -> do
+        ref <- toObjectRef value
+        mvalue <- getPropertyValue name ref
+        let value' = fromMaybe JSUndefined mvalue
+        declare mut decl value'
+    case mrest of
+        Nothing -> return ()
+        _ -> error "Rest operator on destructuring is not implemented yet"
+declare _ _ _ = error "Destructuring iterables is not implemented yet"
 
 
 -- |Searches for a binding in the scope

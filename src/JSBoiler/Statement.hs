@@ -60,7 +60,7 @@ data PropertyKey = IdentifierKey String
                  deriving (Show, Eq)
 
 data Declaration = DeclareBinding String
-                 | DeclareDestructObject [Declaration] (Maybe String)
+                 | DeclareDestructObject [(String, Declaration)] (Maybe String)
                  | DeclareDestructIterable [Maybe Declaration] (Maybe String)
                  deriving (Show, Eq)
 
