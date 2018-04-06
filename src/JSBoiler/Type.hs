@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 module JSBoiler.Type
     ( JSType (..)
     , Object (..)
@@ -97,20 +98,7 @@ data InterruptReason = InterruptBreak
                      | InterruptThrow JSType
 
 newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Stack (ExceptT InterruptReason IO) a }
-
-instance Functor JSBoiler where
-    fmap f = JSBoiler . fmap f . runBoiler
-
-instance Applicative JSBoiler where
-    pure = JSBoiler . return
-    x <*> y = JSBoiler $ runBoiler x <*> runBoiler y
-
-instance Monad JSBoiler where
-    return = pure
-    x >>= f = JSBoiler $ runBoiler x >>= runBoiler . f
-
-instance MonadIO JSBoiler where
-    liftIO = JSBoiler . lift . lift
+                        deriving (Functor, Applicative, Monad, MonadIO)
 
 getStack :: JSBoiler Stack
 getStack = JSBoiler ask
