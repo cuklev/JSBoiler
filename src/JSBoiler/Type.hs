@@ -9,7 +9,6 @@ module JSBoiler.Type
     , numberPrettyShow
     , Binding (..)
     , ScopeBindings
-    , Stack
     , JSBoiler
     , getStack
     , substiteStack
@@ -66,7 +65,7 @@ valuedProperty x = Property { propertyValue = x
                             }
 
 data Function = Function { boundThis :: Maybe (IORef Object)
-                         , functionScope :: Stack
+                         , functionScope :: Scope
                          , argumentNames :: [(Declaration, Maybe Expression)]
                          , function :: JSBoiler ()
                          }
@@ -90,20 +89,20 @@ data Binding = Binding { boundValue :: JSType
                        }
 
 type ScopeBindings = HashMap String Binding
-type Stack = [IORef ScopeBindings]
+type Scope = [IORef ScopeBindings]
 
 data InterruptReason = InterruptBreak
                      | InterruptContinue
                      | InterruptReturn JSType
                      | InterruptThrow JSType
 
-newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Stack (ExceptT InterruptReason IO) a }
+newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Scope (ExceptT InterruptReason IO) a }
                         deriving (Functor, Applicative, Monad, MonadIO)
 
-getStack :: JSBoiler Stack
+getStack :: JSBoiler Scope
 getStack = JSBoiler ask
 
-substiteStack :: Stack -> JSBoiler a -> JSBoiler a
+substiteStack :: Scope -> JSBoiler a -> JSBoiler a
 substiteStack stack = JSBoiler . local (const stack) . runBoiler
 
 pushStack :: ScopeBindings -> JSBoiler a -> JSBoiler a
@@ -140,7 +139,7 @@ jsReturn = JSBoiler . lift . throwE . InterruptReturn
 jsThrow :: JSType -> JSBoiler a
 jsThrow = (>> return undefined) . JSBoiler . lift . throwE . InterruptThrow
 
-initStack :: IO Stack
+initStack :: IO Scope
 initStack = do
     ref <- newIORef global
     return [ref]
@@ -149,7 +148,7 @@ initStack = do
             , ("NaN", Binding { boundValue = JSNumber (0 / 0), mutable = False })
             ]
 
-evalBoiler :: Stack -> JSBoiler a -> IO a
+evalBoiler :: Scope -> JSBoiler a -> IO a
 evalBoiler stack boiler = do
     result <- runExceptT $ runReaderT (runBoiler boiler) stack
     case result of
