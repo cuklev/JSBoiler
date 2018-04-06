@@ -109,12 +109,12 @@ newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Environment (ExceptT Interr
                         deriving (Functor, Applicative, Monad, MonadIO)
 
 -- |Gets global this object
-getGlobalThis :: JSBoiler JSType
-getGlobalThis = JSBoiler $ JSObject . globalThis <$> ask
+getGlobalThis :: JSBoiler (IORef Object)
+getGlobalThis = JSBoiler $ fmap globalThis ask
 
 -- |Gets current this object
-getCurrentThis :: JSBoiler JSType
-getCurrentThis = JSBoiler $ JSObject . currentThis <$> ask
+getCurrentThis :: JSBoiler (IORef Object)
+getCurrentThis = JSBoiler $ fmap currentThis ask
 
 -- |Sets different this object
 setCurrentThis :: IORef Object -> JSBoiler a -> JSBoiler a

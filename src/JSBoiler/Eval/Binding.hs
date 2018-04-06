@@ -6,6 +6,7 @@ import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
 import JSBoiler.Type
+import JSBoiler.Eval.Property
 
 
 checkForAlreadyDeclared :: ScopeBindings -> Declaration -> Maybe String
@@ -14,6 +15,7 @@ checkForAlreadyDeclared scope (DeclareBinding name)
     | otherwise           = Nothing
 checkForAlreadyDeclared _ _ = error "Destructuring is not implemented yet"
 
+-- |Declares in the most local scope
 declare :: Bool -> Declaration -> JSType -> JSBoiler ()
 declare mut (DeclareBinding name) value = do
     (s:_) <- getScope
@@ -23,18 +25,23 @@ declare mut (DeclareBinding name) value = do
                                    }
 declare _ _ _ = error "Destructuring is not implemented yet"
 
+
+-- |Searches for a binding in the scope
+-- and then in the global this object
 getBindingValue :: String -> JSBoiler (Maybe JSType)
-getBindingValue name = getScope >>= liftIO . findBinding
-    where findBinding [] = return Nothing
+getBindingValue name = getScope >>= findBinding
+    where findBinding [] = getGlobalThis >>= getPropertyValue name
           findBinding (s:ss) = do
-            scope <- readIORef s
+            scope <- liftIO $ readIORef s
             case M.lookup name scope of
                 Nothing -> findBinding ss
                 Just x -> return $ Just $ boundValue x
 
+-- |Searches for a binding in the scope
+-- and then in the global this object
 setBindingValue :: String -> JSType -> JSBoiler ()
 setBindingValue name value = getScope >>= setBinding
-    where setBinding [] = jsThrow $ JSString $ name ++ " is not declared"
+    where setBinding [] = getGlobalThis >>= \this -> setPropertyValue name this value
           setBinding (s:ss) = do
             scope <- liftIO $ readIORef s
             case M.lookup name scope of

@@ -30,7 +30,7 @@ evalExpression expr = case expr of
         Identifier x     -> getBindingValue x
                                 >>= maybe (jsThrow $ JSString $ x ++ " is not defined") return
 
-        CurrentThis      -> getCurrentThis
+        CurrentThis      -> fmap JSObject getCurrentThis
 
         x :.:key -> do
             name <- getKeyName key
