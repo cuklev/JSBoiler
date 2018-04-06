@@ -37,7 +37,7 @@ callFunction obj func args = getReturnValue $ do
     let this = fromMaybe obj $ boundThis func -- TODO: fix this
         newBindings = M.fromList $ zipWith bindArgument (argumentNames func) (args ++ repeat JSUndefined)
                                    ++ [("this", Binding { boundValue = JSObject this, mutable = False })]
-    substiteScope (functionScope func)
+    setScope (functionScope func)
         $ pushScope newBindings
         $ function func
 

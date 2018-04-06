@@ -10,8 +10,11 @@ module JSBoiler.Type
     , Binding (..)
     , ScopeBindings
     , JSBoiler
+    , getGlobalThis
+    , getCurrentThis
+    , setCurrentThis
     , getScope
-    , substiteScope
+    , setScope
     , pushScope
     , getReturnValue
     , shouldContinueLoop
@@ -105,11 +108,23 @@ data Environment = Environment
 newtype JSBoiler a = JSBoiler { runBoiler :: ReaderT Environment (ExceptT InterruptReason IO) a }
                         deriving (Functor, Applicative, Monad, MonadIO)
 
+-- |Gets global this object
+getGlobalThis :: JSBoiler JSType
+getGlobalThis = JSBoiler $ JSObject . globalThis <$> ask
+
+-- |Gets current this object
+getCurrentThis :: JSBoiler JSType
+getCurrentThis = JSBoiler $ JSObject . currentThis <$> ask
+
+-- |Sets different this object
+setCurrentThis :: IORef Object -> JSBoiler a -> JSBoiler a
+setCurrentThis this = JSBoiler . local (\e -> e { currentThis = this }) . runBoiler
+
 getScope :: JSBoiler Scope
 getScope = JSBoiler $ fmap envScope ask
 
-substiteScope :: Scope -> JSBoiler a -> JSBoiler a
-substiteScope scope = JSBoiler . local (\e -> e { envScope = scope }) . runBoiler
+setScope :: Scope -> JSBoiler a -> JSBoiler a
+setScope scope = JSBoiler . local (\e -> e { envScope = scope }) . runBoiler
 
 pushScope :: ScopeBindings -> JSBoiler a -> JSBoiler a
 pushScope bindings block = do

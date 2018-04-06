@@ -27,6 +27,8 @@ data Expression = LiteralNumber Double
 
                 | Identifier String
 
+                | CurrentThis
+
                 | Expression :.: PropertyKey
                 | Expression `FunctionCall` [Expression]
 
