@@ -44,3 +44,6 @@ jsNull = string "null" >> notFollowedBy identifierSymbol
 jsBoolean :: Parsec String () Bool
 jsBoolean = (string "false" >> notFollowedBy identifierSymbol >> return False)
         <|> (string "true" >> notFollowedBy identifierSymbol >> return True)
+
+thisLiteral :: Parsec String () ()
+thisLiteral = string "this" >> notFollowedBy identifierSymbol

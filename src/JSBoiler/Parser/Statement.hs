@@ -86,9 +86,10 @@ expression = buildExpressionParser table term
                    <|> objectLiteral
                    <|> fmap LiteralNumber jsNumber
                    <|> fmap LiteralString jsString
-                   <|> try (fmap (const LiteralNull) jsNull)
+                   <|> try (LiteralNull <$ jsNull)
                    <|> try (fmap LiteralBoolean jsBoolean)
                    <|> try functionLiteral
+                   <|> try (CurrentThis <$ thisLiteral)
                    <|> fmap Identifier identifier
             nl <- trackNewLineSpaces
             return (nl, t)

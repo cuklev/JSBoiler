@@ -37,3 +37,7 @@ spec = do
         [ ("true", True)
         , ("false", False)
         ]
+
+    describe "this" $ testMany thisLiteral
+        [ ("this", ())
+        ]
