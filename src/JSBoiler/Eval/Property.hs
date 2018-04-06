@@ -19,6 +19,8 @@ getProperty name obj = case own of
         Just _ -> own
     where own = M.lookup name $ properties obj
 
+-- |Searches for specified property down the property chain.
+-- Calls property getter or returns its value.
 getPropertyValue :: String -> IORef Object -> JSBoiler (Maybe JSType)
 getPropertyValue name ref = do
     obj <- liftIO $ readIORef ref
@@ -61,6 +63,7 @@ setPropertyValue name ref value = do
         Just prop -> setValue prop value
 
 
+-- |Makes object with specified properties
 makeObject :: [(String, JSType)] -> JSBoiler JSType
 makeObject pairs = liftIO $ JSObject <$> newIORef obj
     where
