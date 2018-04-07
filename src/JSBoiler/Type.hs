@@ -160,7 +160,7 @@ jsReturn :: JSType -> JSBoiler ()
 jsReturn = JSBoiler . lift . throwE . InterruptReturn
 
 jsThrow :: JSType -> JSBoiler a
-jsThrow = (>> return undefined) . JSBoiler . lift . throwE . InterruptThrow
+jsThrow = (undefined <$) . JSBoiler . lift . throwE . InterruptThrow
 
 initEnv :: IO Environment
 initEnv = do
