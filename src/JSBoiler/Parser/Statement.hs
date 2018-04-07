@@ -58,11 +58,8 @@ objectLiteral = do
 functionExpression :: Parsec () Text Expression
 functionExpression = do
     _ <- string "function"
-    notFollowedBy $ satisfy isIdentifierSymbol
     space
-    _ <- (identifier <* space) <|> return ""
-    -- name <- (identifier <* space) <|> return ""
-    space
+    _ <- (identifier <* space) <|> return "" -- this is the name
     _ <- char '('
     space
     args <- decl' `sepBy` char ','
