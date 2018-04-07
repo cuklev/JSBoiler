@@ -1,9 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Eval where
 
 import Control.Monad (liftM2, forM_, when, void, foldM)
 import Control.Monad.IO.Class (liftIO)
 import Data.Maybe (fromMaybe)
 import Data.IORef
+import Data.Text (append, unpack)
 import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Statement
@@ -28,7 +30,7 @@ evalExpression expr = case expr of
         LiteralFunction args statements -> makeFunction evalCode args statements
 
         Identifier x     -> getBindingValue x
-                                >>= maybe (jsThrow $ JSString $ x ++ " is not defined") return
+                                >>= maybe (jsThrow $ JSString $ x `append` " is not defined") return
 
         CurrentThis      -> fmap JSObject getCurrentThis
 
@@ -95,7 +97,7 @@ evalStatement statement = case statement of
             case checkForAlreadyDeclared scope decl of
                 Nothing -> evalExpression expr
                             >>= declare False decl
-                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared" -- should be Syntax error
+                Just name -> error $ "Identifier '" ++ unpack name ++ "' has already been declared" -- should be Syntax error
         return Nothing
 
     LetDeclaration declarations -> do
@@ -105,7 +107,7 @@ evalStatement statement = case statement of
             case checkForAlreadyDeclared scope decl of
                 Nothing -> maybe (return JSUndefined) evalExpression mexpr
                             >>= declare True decl
-                Just name -> error $ "Identifier '" ++ name ++ "' has already been declared" -- should be Syntax error
+                Just name -> error $ "Identifier '" ++ unpack name ++ "' has already been declared" -- should be Syntax error
         return Nothing
 
     BlockScope statements -> pushScope M.empty $ evalCode statements

@@ -1,21 +1,22 @@
 module TestUtil where
 
+import Data.Text (pack)
 import Test.Hspec
-import Text.Parsec (parse)
+import Text.Megaparsec (parse)
 
 import JSBoiler.Eval
 
 testMany parser = mapM_ test
     where
         test (str, expected) = it str $
-            case parse parser "" str of
+            case parse parser "" $ pack str of
                 Right actual -> actual `shouldBe` expected
                 Left error   -> expectationFailure $ show error
 
 testManyFail parser = mapM_ test
     where
         test str = it str $
-            case parse parser "" str of
+            case parse parser "" $ pack str of
                 Right actual -> expectationFailure $ "Parsed as " ++ show actual
                 Left _       -> return ()
 

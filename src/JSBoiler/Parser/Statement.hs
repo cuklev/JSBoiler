@@ -1,93 +1,102 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Parser.Statement where
 
 import Control.Monad (void, join)
 import Data.Maybe (catMaybes)
-import Text.Parsec
-import Text.Parsec.Expr
+import Data.Text (Text)
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import Text.Megaparsec.Expr
 
 import JSBoiler.Parser.Identifier
 import JSBoiler.Parser.Literal
 import JSBoiler.Statement
 import JSBoiler.Type (numberPrettyShow)
 
+-- |For compatibillity with Parsec
+optionMaybe :: Parsec () Text a -> Parsec () Text (Maybe a)
+optionMaybe p = fmap Just p <|> pure Nothing
 
-trackNewLineSpaces :: Parsec String () Bool
-trackNewLineSpaces = (endOfLine >> spaces >> return True)
-                 <|> (space >> trackNewLineSpaces)
+-- |Skips whitespace, @True@ if was jumped on another line
+trackNewLineSpaces :: Parsec () Text Bool
+trackNewLineSpaces = (eol >> space >> return True)
+                 <|> (spaceChar >> trackNewLineSpaces)
                  <|> return False
 
-objectLiteral :: Parsec String () Expression
+-- |Parser for javascript object literals
+objectLiteral :: Parsec () Text Expression
 objectLiteral = do
     _ <- char '{'
-    spaces
-    props <- property `sepEndBy` (char ',' >> spaces)
+    space
+    props <- property `sepEndBy` (char ',' >> space)
     _ <- char '}'
     return $ LiteralObject props
 
     where
-        property = between spaces spaces (expressionKey <|> stringNumberKey <|> identKey)
+        property = between space space (expressionKey <|> stringNumberKey <|> identKey)
         expressionKey = do
             _ <- char '['
             key <- fmap snd expression
             _ <- char ']'
-            spaces
+            space
             _ <- char ':'
             value <- fmap snd expression
             return (ExpressionKey key, value)
         stringNumberKey = do
-            key <- jsString <|> fmap numberPrettyShow jsNumber
-            spaces
+            key <- stringLiteral <|> fmap numberPrettyShow numberLiteral
+            space
             _ <- char ':'
             value <- fmap snd expression
             return (IdentifierKey key, value)
         identKey = do
             key <- identifier
-            spaces
+            space
             value <- option (Identifier key) (char ':' >> fmap snd expression)
             return (IdentifierKey key, value)
 
-functionLiteral :: Parsec String () Expression
+-- |Parser for javascript function literals
+functionLiteral :: Parsec () Text Expression
 functionLiteral = do
     _ <- string "function"
-    notFollowedBy identifierSymbol
-    spaces
-    _ <- (identifier <* spaces) <|> return ""
-    -- name <- (identifier <* spaces) <|> return ""
-    spaces
+    notFollowedBy $ satisfy isIdentifierSymbol
+    space
+    _ <- (identifier <* space) <|> return ""
+    -- name <- (identifier <* space) <|> return ""
+    space
     _ <- char '('
-    spaces
+    space
     args <- decl' `sepBy` char ','
     _ <- char ')'
-    spaces
+    space
     _ <- char '{'
-    spaces
+    space
     statements <- nonEmptyStatements
-    spaces
+    space
     _ <- char '}'
     return $ LiteralFunction args statements
 
     where
         decl' = do
-            spaces
+            space
             decl <- declaration
-            spaces
+            space
             mexpr <- optionMaybe (char '=' >> expression)
             return $ case mexpr of
                 Nothing -> (decl, Nothing)
                 Just (_, expr) -> (decl, Just expr)
 
-expression :: Parsec String () (Bool, Expression)
-expression = buildExpressionParser table term
+-- |Parser for javascript expressions
+expression :: Parsec () Text (Bool, Expression)
+expression = makeExprParser term table
     where
         term = do
-            spaces
+            space
             t <- between (char '(') (char ')') (fmap snd expression)
                    <|> objectLiteral
-                   <|> fmap LiteralNumber jsNumber
-                   <|> fmap LiteralString jsString
-                   <|> try (LiteralNull <$ jsNull)
-                   <|> try (fmap LiteralBoolean jsBoolean)
+                   <|> fmap LiteralNumber numberLiteral
+                   <|> fmap LiteralString stringLiteral
+                   <|> try (LiteralNull <$ nullLiteral)
+                   <|> try (fmap LiteralBoolean booleanLiteral)
                    <|> try functionLiteral
                    <|> try (CurrentThis <$ thisLiteral)
                    <|> fmap Identifier identifier
@@ -96,20 +105,23 @@ expression = buildExpressionParser table term
 
         table = [ [Postfix chainPostfixOperations]
                 , [Prefix chainPrefixOperations]
-                , [binaryOperator "*" (:*:) AssocLeft, binaryOperator "/" (:/:) AssocLeft, binaryOperator "%" (:%:) AssocLeft]
-                , [binaryOperator "+" (:+:) AssocLeft, binaryOperator "-" (:-:) AssocLeft]
-                , [binaryOperator "&&" (:&&:) AssocLeft, binaryOperator "||" (:||:) AssocLeft]
-                , [binaryOperator "=" assign AssocRight, binaryOperator "+=" (assignModify (:+:)) AssocRight, binaryOperator "-=" (assignModify (:-:)) AssocRight, binaryOperator "*=" (assignModify (:*:)) AssocRight, binaryOperator "/=" (assignModify (:/:)) AssocRight, binaryOperator "%=" (assignModify (:%:)) AssocRight]
+                , [binaryLeft "*" (:*:), binaryLeft "/" (:/:), binaryLeft "%" (:%:)]
+                , [binaryLeft "+" (:+:), binaryLeft "-" (:-:)]
+                , [binaryLeft "&&" (:&&:), binaryLeft "||" (:||:)]
+                , [binaryRight "=" assign, binaryRight "+=" (assignModify (:+:)), binaryRight "-=" (assignModify (:-:)), binaryRight "*=" (assignModify (:*:)), binaryRight "/=" (assignModify (:/:)), binaryRight "%=" (assignModify (:%:))]
                 ]
 
-        binaryOperator x f = Infix $ try $ do
+        binaryLeft x f = InfixL $ binary x f
+        binaryRight x f = InfixR $ binary x f
+        binary :: Text -> (Expression -> Expression -> Expression) -> Parsec () Text ((Bool, Expression) -> (Bool, Expression) -> (Bool, Expression))
+        binary x f = try $ do
             _ <- string x
-            notFollowedBy (char '=')
+            notFollowedBy $ char '='
             return (\(_, t1) (nl, t2) -> (nl, f t1 t2))
 
-        propertyAccess = char '.' >> spaces >> identifier
+        propertyAccess = char '.' >> space >> identifier
         indexAccess = between (char '[') (char ']') (fmap snd expression)
-        functionCall = between (char '(' >> spaces) (char ')') (fmap snd expression `sepBy` char ',')
+        functionCall = between (char '(' >> space) (char ')') (fmap snd expression `sepBy` char ',')
 
         postfixOperations = do
             expr <- fmap (flip (:.:) . IdentifierKey) propertyAccess
@@ -122,10 +134,10 @@ expression = buildExpressionParser table term
             ps <- many postfixOperations
             return $ \e -> foldl (\(_, e') (nl, p) -> (nl, p e')) e ps
 
-        prefixPlus = char '+' >> spaces >> return PrefixPlus
-        prefixMinus = char '-' >> spaces >> return PrefixMinus
-        prefixNot = char '!' >> spaces >> return PrefixNot
-        prefixTilde = char '~' >> spaces >> return PrefixTilde
+        prefixPlus = char '+' >> space >> return PrefixPlus
+        prefixMinus = char '-' >> space >> return PrefixMinus
+        prefixNot = char '!' >> space >> return PrefixNot
+        prefixTilde = char '~' >> space >> return PrefixTilde
 
         prefixOperations = prefixPlus
                        <|> prefixMinus
@@ -143,37 +155,37 @@ expression = buildExpressionParser table term
         assignModify f l r = assign l $ f l r
 
 
-declaration :: Parsec String () Declaration
+declaration :: Parsec () Text Declaration
 declaration = DeclareBinding <$> identifier
             -- extend to support destructuring
 
-constDeclaration :: Parsec String () (Bool, Statement)
+constDeclaration :: Parsec () Text (Bool, Statement)
 constDeclaration = do
     _ <- string "const"
-    _ <- space
+    _ <- spaceChar
     decls <- decl' `sepBy1` char ','
     let (nls, result) = unzip decls
     return (last nls, ConstDeclaration result)
 
     where decl' = do
-            spaces
+            space
             decl <- declaration
-            spaces
+            space
             _ <- char '='
             (nl, expr) <- expression
             return (nl, (decl, expr))
 
-letDeclaration :: Parsec String () (Bool, Statement)
+letDeclaration :: Parsec () Text (Bool, Statement)
 letDeclaration = do
     _ <- string "let"
-    _ <- space
+    _ <- spaceChar
     decls <- decl' `sepBy1` char ','
     let (nls, result) = unzip decls
     return (last nls, LetDeclaration result)
 
     where
         decl' = do
-            spaces
+            space
             decl <- declaration
             nl0 <- trackNewLineSpaces
             mexpr <- optionMaybe (char '=' >> expression)
@@ -182,24 +194,24 @@ letDeclaration = do
                 Just (nl, expr) -> (nl, (decl, Just expr))
 
 
-blockScope :: Parsec String () (Bool, Statement)
+blockScope :: Parsec () Text (Bool, Statement)
 blockScope = do
     _ <- char '{'
-    spaces
+    space
     statements <- nonEmptyStatements
-    spaces
+    space
     _ <- char '}'
     return (True, BlockScope statements)
 
-ifStatement :: Parsec String () (Bool, Statement)
+ifStatement :: Parsec () Text (Bool, Statement)
 ifStatement = do
     _ <- string "if"
-    spaces
+    space
     _ <- char '('
     cond <- fmap snd expression
     _ <- char ')'
     thenW <- mstatement
-    elseW <- join <$> optionMaybe (spaces >> string "else" >> notFollowedBy identifierSymbol >> mstatement)
+    elseW <- join <$> optionMaybe (space >> string "else" >> notFollowedBy (satisfy isIdentifierSymbol) >> mstatement)
     let result = IfStatement
             { condition = cond
             , thenWhat = thenW
@@ -207,10 +219,10 @@ ifStatement = do
             }
     return (True, result)
 
-whileStatement :: Parsec String () (Bool, Statement)
+whileStatement :: Parsec () Text (Bool, Statement)
 whileStatement = do
     _ <- string "while"
-    spaces
+    space
     _ <- char '('
     cond <- fmap snd expression
     _ <- char ')'
@@ -221,17 +233,17 @@ whileStatement = do
             }
     return (True, result)
 
-nonEmptyStatements :: Parsec String () [Statement]
+nonEmptyStatements :: Parsec () Text [Statement]
 nonEmptyStatements = catMaybes <$> many mstatement
 
-mstatement :: Parsec String () (Maybe Statement)
+mstatement :: Parsec () Text (Maybe Statement)
 mstatement = do
-    spaces
-    (char ';' >> spaces >> return Nothing)
+    space
+    (char ';' >> space >> return Nothing)
         <|> do
             (nl, result) <- tryAll
 
-            void (char ';' >> spaces) <|> if nl then return () else notFollowedBy identifierSymbol
+            void (char ';' >> space) <|> if nl then return () else notFollowedBy (satisfy isIdentifierSymbol)
             return (Just result)
 
     where
@@ -255,6 +267,6 @@ mstatement = do
             return (nl, ContinueStatement)
         returnS = do -- do not shadow return
             _ <- string "return"
-            _ <- space
+            _ <- spaceChar
             (nl, e) <- expression
             return (nl, ReturnStatement (Just e))

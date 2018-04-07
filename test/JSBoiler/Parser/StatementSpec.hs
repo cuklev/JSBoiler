@@ -1,6 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Parser.StatementSpec where
 
 import Test.Hspec
+import Data.Text (pack)
 
 import JSBoiler.Parser.Statement
 import JSBoiler.Statement
@@ -9,7 +11,7 @@ import TestUtil
 spec = do
     describe "expressions" $ do
         describe "identifiers" $ testMany (fmap snd expression)
-            $ map (\x -> (x, Identifier x))
+            $ map (\x -> (x, Identifier $ pack x))
                 [ "x", "l2", "Abc", "__proto__", "OhoB0_hoU"
                 , "le", "letx", "cons", "constx", "functio", "functionx"
                 , "tru", "truex", "fals", "falsex", "nul", "nullx"

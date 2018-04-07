@@ -2,8 +2,9 @@ module Main where
 
 import Control.Exception (catch, SomeException)
 import Control.Monad (void, forever, (>=>))
+import qualified Data.Text.IO as TIO
 import System.Environment (getArgs)
-import System.IO (readFile, hFlush, stdout)
+import System.IO (hFlush, stdout)
 import JSBoiler.Parser (parseCode)
 import JSBoiler.Eval (evalCode)
 import JSBoiler.Type (evalBoiler, initEnv, showJSType)
@@ -19,7 +20,7 @@ repl :: IO ()
 repl = initEnv >>= \env -> forever $ do
     putStr "> "
     hFlush stdout
-    line <- getLine
+    line <- TIO.getLine
 
     case parseCode line of
         Left err -> print err
@@ -32,7 +33,7 @@ repl = initEnv >>= \env -> forever $ do
 runFile :: String -> [String] -> IO ()
 runFile file _ = do
     env <- initEnv
-    code <- readFile file
+    code <- TIO.readFile file
     -- do something with args
     -- maybe put them in something global
     case parseCode code of

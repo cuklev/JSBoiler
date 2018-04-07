@@ -1,9 +1,11 @@
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Eval.Operator
     ( (>+), (>-), (>*), (>/), (>%)
     , (>&&), (>||)
     ) where
 
 import Data.Int (Int32)
+import Data.Text (append)
 import JSBoiler.Type
 import JSBoiler.Eval.Value
 
@@ -18,9 +20,9 @@ x >+ y = do
     py <- toPrimitive y
 
     case px of
-        JSString strx -> JSString . (strx ++) <$> stringValue py
+        JSString strx -> JSString . (strx `append`) <$> stringValue py
         _ -> case py of
-                JSString stry -> JSString . (++ stry) <$> stringValue px
+                JSString stry -> JSString . (`append` stry) <$> stringValue px
                 _ -> JSNumber <$> applyNumeric (+) px py
 
 (>-), (>*), (>/), (>%) :: JSType -> JSType -> JSBoiler JSType

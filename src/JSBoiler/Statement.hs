@@ -1,5 +1,8 @@
 module JSBoiler.Statement where
 
+import Data.Text (Text)
+
+
 data Statement = Expression Expression
 
                | ConstDeclaration [(Declaration, Expression)]
@@ -19,13 +22,13 @@ data Statement = Expression Expression
                deriving (Show, Eq)
 
 data Expression = LiteralNumber Double
-                | LiteralString String
+                | LiteralString Text
                 | LiteralNull
                 | LiteralBoolean Bool
                 | LiteralObject [(PropertyKey, Expression)]
                 | LiteralFunction [(Declaration, Maybe Expression)] [Statement]
 
-                | Identifier String
+                | Identifier Text
 
                 | CurrentThis
 
@@ -55,16 +58,16 @@ data Expression = LiteralNumber Double
                 -- | New Expression [Expression] -- new :(
                 deriving (Show, Eq)
 
-data PropertyKey = IdentifierKey String
+data PropertyKey = IdentifierKey Text
                  | ExpressionKey Expression
                  deriving (Show, Eq)
 
-data Declaration = DeclareBinding String
-                 | DeclareDestructObject [(String, Declaration)] (Maybe String)
-                 | DeclareDestructIterable [Maybe Declaration] (Maybe String)
+data Declaration = DeclareBinding Text
+                 | DeclareDestructObject [(Text, Declaration)] (Maybe Text)
+                 | DeclareDestructIterable [Maybe Declaration] (Maybe Text)
                  deriving (Show, Eq)
 
-data LValue = LValueBinding String
+data LValue = LValueBinding Text
             | LValueProperty Expression PropertyKey
-            | LValueDestructIterable [Maybe Declaration] (Maybe String)
+            | LValueDestructIterable [Maybe Declaration] (Maybe Text)
             deriving (Show, Eq)

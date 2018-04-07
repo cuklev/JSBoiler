@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Parser.LiteralSpec where
 
 import Test.Hspec
@@ -5,7 +6,7 @@ import TestUtil
 import JSBoiler.Parser.Literal
 
 spec = do
-    describe "numbers" $ testMany jsNumber $
+    describe "numbers" $ testMany numberLiteral $
         [ ("4", 4)
         , ("42", 42)
         ]
@@ -18,7 +19,7 @@ spec = do
         ++ allShouldBe ["1.3e2", "+1.3e2", "+.13e3", "1.3E2", "+1.3E2", "+.13E3"] 130
         ++ allShouldBe ["-.5e1", "-5.e0", "-5.0e0"] (-5)
 
-    describe "strings" $ testMany jsString
+    describe "strings" $ testMany stringLiteral
         [ ("'string'",        "string")
         , ("\"string\"",      "string")
         , ("'\\0'", "\0")
@@ -29,11 +30,11 @@ spec = do
         , ("'line1\\nline2'", "line1\nline2")
         ]
 
-    describe "null" $ testMany jsNull
+    describe "null" $ testMany nullLiteral
         [ ("null", ())
         ]
 
-    describe "booleans" $ testMany jsBoolean
+    describe "booleans" $ testMany booleanLiteral
         [ ("true", True)
         , ("false", False)
         ]

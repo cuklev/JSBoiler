@@ -1,13 +1,20 @@
-module JSBoiler.Parser.Identifier where
+module JSBoiler.Parser.Identifier
+    ( isIdentifierSymbol
+    , identifier
+    ) where
 
-import Control.Monad (liftM2)
-import Text.Parsec
+import Data.Text (Text, cons)
+import Data.Char (isLetter, isDigit)
+import Text.Megaparsec
+import Text.Megaparsec.Char (letterChar, char)
 
 
-identifierSymbol :: Parsec String () Char
-identifierSymbol = letter <|> digit <|> char '_' <|> char '$'
+-- |True for letters, digits, @_@ and @$@
+isIdentifierSymbol :: Char -> Bool
+isIdentifierSymbol x = isLetter x || isDigit x || x == '_' || x == '$'
 
-identifier :: Parsec String () String
-identifier = do
-    let first = letter <|> char '_' <|> char '$'
-    liftM2 (:) first (many identifierSymbol)
+-- |Parser for javascript identifiers
+identifier :: Parsec () Text Text
+identifier = label "identifier" $ do
+    first <- letterChar <|> char '_' <|> char '$'
+    cons first <$> takeWhileP Nothing isIdentifierSymbol

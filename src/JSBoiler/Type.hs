@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Type
     ( JSType (..)
     , Object (..)
@@ -31,6 +32,7 @@ import Control.Monad.IO.Class
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Except
 import Control.Monad.Trans.Reader
+import Data.Text (Text, pack, unpack)
 import Data.HashMap.Strict (HashMap)
 import qualified Data.HashMap.Strict as M
 import Data.IORef
@@ -39,13 +41,13 @@ import JSBoiler.Statement
 
 
 data JSType = JSNumber Double
-            | JSString String
+            | JSString Text
             | JSBoolean Bool
             | JSUndefined
             | JSNull
             | JSObject (IORef Object)
 
-data Object = Object { properties :: HashMap String Property
+data Object = Object { properties :: HashMap Text Property
                      , behaviour :: Maybe Function
                      , prototype :: Maybe Object
                      }
@@ -79,8 +81,8 @@ isPrimitive (JSObject _) = False
 isPrimitive _            = True
 
 
-numberPrettyShow :: Double -> String
-numberPrettyShow = strip . show
+numberPrettyShow :: Double -> Text
+numberPrettyShow = pack . strip . show
     where
         strip "" = ""
         strip ".0" = "" -- there may be a better way
@@ -91,7 +93,7 @@ data Binding = Binding { boundValue :: JSType
                        , mutable :: Bool
                        }
 
-type ScopeBindings = HashMap String Binding
+type ScopeBindings = HashMap Text Binding
 type Scope = [IORef ScopeBindings]
 
 data InterruptReason = InterruptBreak
@@ -222,6 +224,6 @@ showJSType (JSObject objRef) = showObj 0 [] objRef
                 JSObject ref -> showObj (indentLevel + 1) parents ref
                 _            -> showJSType v
 
-        toKeyValue k v = k ++ ": " ++ v ++ ","
+        toKeyValue k v = unpack k ++ ": " ++ v ++ ","
 
         putIndents indentLevel = (replicate (indentLevel * 2) ' ' ++)

@@ -1,12 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 module JSBoiler.Parser where
 
-import Text.Parsec
+import Data.Text (Text)
+import Text.Megaparsec
 
 import JSBoiler.Parser.Statement
 import JSBoiler.Statement
 
 
-parseCode :: String -> Either ParseError [Statement]
+parseCode :: Text -> Either (ParseError Char ()) [Statement]
 parseCode = parse statements "js"
     where statements = nonEmptyStatements <* eof

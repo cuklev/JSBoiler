@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Eval.Function where
 
 import Control.Applicative ((<|>))

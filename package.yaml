@@ -8,12 +8,13 @@ category: Language
 
 dependencies:
 - base
+- text
 
 library:
   source-dirs: src
   dependencies:
   - unordered-containers
-  - parsec
+  - megaparsec
   - transformers
   - template-haskell
   ghc-options:
@@ -35,7 +36,7 @@ tests:
     source-dirs: test
     main: Spec.hs
     dependencies:
-    - parsec
+    - megaparsec
     - hspec
     - JSBoiler
     ghc-options:

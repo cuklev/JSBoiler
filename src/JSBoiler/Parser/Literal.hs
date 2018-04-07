@@ -1,49 +1,71 @@
-{-# LANGUAGE FlexibleContexts #-}
-module JSBoiler.Parser.Literal where
+{-# LANGUAGE OverloadedStrings #-}
+module JSBoiler.Parser.Literal
+    ( numberLiteral
+    , stringLiteral
+    , nullLiteral
+    , booleanLiteral
+    , thisLiteral
+    ) where
 
 import Control.Monad (liftM2)
-import Text.Parsec
+import Data.Char (isDigit)
+import Data.Text (Text)
+import qualified Data.Text as T
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import JSBoiler.Parser.Identifier (isIdentifierSymbol)
 
-import JSBoiler.Parser.Identifier (identifierSymbol)
 
-jsNumber :: Parsec String () Double
-jsNumber = do
-    let digits = many1 digit
-        signed x = char '-' ++: x
-               <|> (char '+' >> x)
-               <|> x
-
-        (+++) = liftM2 (++)
-        (++:) = liftM2 (:)
-
-    fmap read $ signed $ choice
+-- |Parser for all kinds of javascript numbers
+-- (signed, unsigned, rational, scientific notation)
+numberLiteral :: Parsec () Text Double
+numberLiteral = fmap (read . T.unpack) $ signed $ choice
         [ digits +++ option "" (string "." +++ option "0" digits)
         , return "0" +++ string "." +++ digits
         ]
         +++ option "" ((char 'e' <|> char 'E') ++: signed digits)
-
-jsString :: Parsec String () String
-jsString = within '"' <|> within '\'' -- must add `template strings`
     where
+        digits :: Parsec () Text Text
+        digits = takeWhile1P Nothing isDigit
+        signed :: Parsec () Text Text -> Parsec () Text Text
+        signed x = char '-' ++: x
+               <|> (char '+' >> x)
+               <|> x
+
+        (+++) = liftM2 T.append
+        (++:) = liftM2 T.cons
+
+-- |Parser for javascript strings
+-- (withing single or double quotes).
+-- Template strings are not implemented yet!
+stringLiteral :: Parsec () Text Text
+stringLiteral = within '"' <|> within '\''
+    where
+        within :: Char -> Parsec () Text Text
         within q = let quote = char q
-                       chars = escapedChar <|> noneOf [q]
-                   in between quote quote $ many chars
+                       normalChars = takeWhile1P Nothing (\x -> x /= q && x /= '\\' && x /= '\n')
+                       str = T.concat <$> many (normalChars <|> escapedChar)
+                   in between quote quote str
 
         escapedChar = char '\\' >> fmap escape anyChar
-        escape x = case x of
+        escape x = T.singleton $ case x of
             '0' -> '\0'
             'b' -> '\b'
             'n' -> '\n'
             'r' -> '\r'
             't' -> '\t'
-            _   -> x    -- maybe more escapings are needed
+            _   -> x    -- TODO: more escapings
 
-jsNull :: Parsec String () ()
-jsNull = string "null" >> notFollowedBy identifierSymbol
+-- |Parser for javascript @null@
+nullLiteral :: Parsec () Text ()
+nullLiteral = string "null" >> notFollowedBy (satisfy isIdentifierSymbol)
 
-jsBoolean :: Parsec String () Bool
-jsBoolean = (string "false" >> notFollowedBy identifierSymbol >> return False)
-        <|> (string "true" >> notFollowedBy identifierSymbol >> return True)
+-- |Parser for javascript @true@ and @false@
+booleanLiteral :: Parsec () Text Bool
+booleanLiteral = (falseP <|> trueP) <* notFollowedBy (satisfy isIdentifierSymbol)
+    where falseP = False <$ string "false"
+          trueP  = True  <$ string "true"
 
-thisLiteral :: Parsec String () ()
-thisLiteral = string "this" >> notFollowedBy identifierSymbol
+-- |Parser for javascript @this@
+thisLiteral :: Parsec () Text ()
+thisLiteral = string "this" >> notFollowedBy (satisfy isIdentifierSymbol)

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Eval.Property
     ( getPropertyValue
     , setPropertyValue
@@ -7,13 +8,14 @@ module JSBoiler.Eval.Property
 import Control.Monad (void)
 import Control.Monad.IO.Class (liftIO)
 import Data.IORef
+import Data.Text (Text, append)
 import qualified Data.HashMap.Strict as M
 
 import JSBoiler.Type
 import JSBoiler.Eval.Function
 
 
-getProperty :: String -> Object -> Maybe Property
+getProperty :: Text -> Object -> Maybe Property
 getProperty name obj = case own of
         Nothing -> prototype obj >>= getProperty name
         Just _ -> own
@@ -21,7 +23,7 @@ getProperty name obj = case own of
 
 -- |Searches for specified property down the property chain.
 -- Calls property getter or returns its value.
-getPropertyValue :: String -> IORef Object -> JSBoiler (Maybe JSType)
+getPropertyValue :: Text -> IORef Object -> JSBoiler (Maybe JSType)
 getPropertyValue name ref = do
     obj <- liftIO $ readIORef ref
     let mprop = getProperty name obj
@@ -32,11 +34,11 @@ getPropertyValue name ref = do
     maybe (return Nothing) (fmap Just . getValue) mprop
 
 
-setProperty :: String -> Property -> Object -> Object
+setProperty :: Text -> Property -> Object -> Object
 setProperty name prop obj = obj { properties = ps }
     where ps = M.insert name prop $ properties obj
 
-setPropertyValue :: String -> IORef Object -> JSType -> JSBoiler ()
+setPropertyValue :: Text -> IORef Object -> JSType -> JSBoiler ()
 setPropertyValue name ref value = do
     obj <- liftIO $ readIORef ref
     let props = properties obj
@@ -45,7 +47,7 @@ setPropertyValue name ref value = do
             Nothing -> if writeable prop
                             then let obj' = setProperty name (prop { propertyValue = val }) obj
                                  in liftIO $ writeIORef ref obj'
-                            else jsThrow $ JSString $ "Cannot assign to read only property '" ++ name ++ "'"
+                            else jsThrow $ JSString $ "Cannot assign to read only property '" `append` name `append` "'"
             Just func -> void (callFunction ref func [val])
 
     case mprop of
@@ -64,7 +66,7 @@ setPropertyValue name ref value = do
 
 
 -- |Makes object with specified properties
-makeObject :: [(String, JSType)] -> IO JSType
+makeObject :: [(Text, JSType)] -> IO JSType
 makeObject pairs = JSObject <$> newIORef obj
     where
         toProperty = fmap valuedProperty
