@@ -134,17 +134,14 @@ expression = makeExprParser term table
             ps <- many postfixOperations
             return $ \e -> foldl (\(_, e') (nl, p) -> (nl, p e')) e ps
 
-        prefixPlus = char '+' >> space >> return PrefixPlus
-        prefixMinus = char '-' >> space >> return PrefixMinus
-        prefixNot = char '!' >> space >> return PrefixNot
-        prefixTilde = char '~' >> space >> return PrefixTilde
-
-        prefixOperations = prefixPlus
-                       <|> prefixMinus
-                       <|> prefixNot
-                       <|> prefixTilde
+        prefixOperations = ( (PrefixPlus  <$ char '+')
+                         <|> (PrefixMinus <$ char '-')
+                         <|> (PrefixNot   <$ char '!')
+                         <|> (PrefixTilde <$ char '~'))
+                            <* space
 
         chainPrefixOperations = do
+            space
             ps <- many prefixOperations
             return $ \(nl, e) -> (nl, foldr ($) e ps)
 
@@ -243,7 +240,8 @@ mstatement = do
         <|> do
             (nl, result) <- tryAll
 
-            void (char ';' >> space) <|> if nl then return () else notFollowedBy (satisfy isIdentifierSymbol)
+            void (char ';' >> space) <|> if nl then return ()
+                                               else notFollowedBy (satisfy isIdentifierSymbol)
             return (Just result)
 
     where
