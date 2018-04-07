@@ -28,12 +28,12 @@ objectLiteral :: Parsec () Text Expression
 objectLiteral = do
     _ <- char '{'
     space
-    props <- property `sepEndBy` (char ',' >> space)
+    props <- (property <* space) `sepEndBy` (char ',' >> space)
     _ <- char '}'
     return $ LiteralObject props
 
     where
-        property = between space space (expressionKey <|> stringNumberKey <|> identKey)
+        property = expressionKey <|> stringNumberKey <|> identKey
         expressionKey = do
             _ <- char '['
             key <- fmap snd expression
