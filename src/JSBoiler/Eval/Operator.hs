@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 module JSBoiler.Eval.Operator
     ( (>+), (>-), (>*), (>/), (>%)
     , (>&&), (>||)
