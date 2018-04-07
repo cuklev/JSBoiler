@@ -54,9 +54,9 @@ objectLiteral = do
             value <- option (Identifier key) (char ':' >> fmap snd expression)
             return (IdentifierKey key, value)
 
--- |Parser for javascript function literals
-functionLiteral :: Parsec () Text Expression
-functionLiteral = do
+-- |Parser for javascript function expressions
+functionExpression :: Parsec () Text Expression
+functionExpression = do
     _ <- string "function"
     notFollowedBy $ satisfy isIdentifierSymbol
     space
@@ -97,7 +97,7 @@ expression = makeExprParser term table
                    <|> fmap LiteralString stringLiteral
                    <|> try (LiteralNull <$ nullLiteral)
                    <|> try (fmap LiteralBoolean booleanLiteral)
-                   <|> try functionLiteral
+                   <|> try functionExpression
                    <|> try (CurrentThis <$ thisLiteral)
                    <|> fmap Identifier identifier
             nl <- trackNewLineSpaces
@@ -137,8 +137,8 @@ expression = makeExprParser term table
         prefixOperations = ( (PrefixPlus  <$ char '+')
                          <|> (PrefixMinus <$ char '-')
                          <|> (PrefixNot   <$ char '!')
-                         <|> (PrefixTilde <$ char '~'))
-                            <* space
+                         <|> (PrefixTilde <$ char '~')
+                           ) <* space
 
         chainPrefixOperations = do
             space
